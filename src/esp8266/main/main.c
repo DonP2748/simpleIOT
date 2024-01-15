@@ -15,32 +15,37 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "timer/systimer.h"
 #include <stdio.h>
 #include "service/process.h"
 #include "service/network.h"
 #include "user_config.h"
+#include "sig_pwm.h"
 //---------------------------------------//
 
 //---------------GLOBAL------------------//
-//static const char *TAG = "MAIN";
+static const char *TAG = "MAIN";
 
 //---------------------------------------//
 
 
 //--------------PRIVATE------------------//
 //---------------------------------------//
+
+
 void app_main()
 {
+    int a = 0;
     nvs_flash_init();
     esp_task_wdt_reset();
-    init_device_process();
-    init_network_process();
+//    init_device_process();
+//    init_network_process();
+
     while (1) 
     {
         // usleep(53);    
         // ets_delay_us(10);
         esp_task_wdt_reset();
-        main_process_notify();
         vTaskDelay(1/portTICK_RATE_MS);
     }
 }

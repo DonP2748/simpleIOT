@@ -34,11 +34,10 @@
 //---------------------------------------//
 
 //--------------PRIVATE------------------//
-sensor_t* dht = NULL;
-sensor_t* threshold = NULL;
-alarm_t* lc_alarm = NULL;
+static sensor_t dht = {0};
+static sensor_t threshold = {0};
+static alarm_t lc_alarm = {0};
 static void(*alarm_over_threshold_callback)(bool arg);
-
 static const char *TAG = "ALARM";
 //---------------------------------------//
 
@@ -46,41 +45,34 @@ alarm_t* init_alarm(void)
 {
 	sensor_init();
 	ESP_LOGI(TAG,"Init Alarm!");
-
-	dht = (sensor_t*)calloc(1,sizeof(sensor_t));
-	if(!dht) return NULL;
-	threshold = (sensor_t*)calloc(1,sizeof(sensor_t));
-	if(!threshold) return NULL;
-	lc_alarm  = (alarm_t*)calloc(1,sizeof(alarm_t));
-	if(!lc_alarm) return NULL;
-
-	lc_alarm->data = threshold;
-	return lc_alarm;
+	lc_alarm.data = &threshold;
+	return &lc_alarm;
 }
 
 sensor_t* get_sensor_data_device(void)
 {
-	return dht;
+	return &dht;
 }
 
 
 void alarm_check_threshold(void)
 {
-	if(sensor_read_data(dht) != ESP_OK)
+	if(sensor_read_data(&dht) != ESP_OK)
 		return;
-	if(lc_alarm->state)
+	if(lc_alarm.state)
 	{
-		if((dht->temp >= lc_alarm->data->temp)|(dht->humi >= lc_alarm->data->humi))
+		if((dht.temp >= lc_alarm.data->temp)|(dht.humi >= lc_alarm.data->humi))
 		{
-			if(!lc_alarm->status)
+			if(!lc_alarm.status)
 			{
-				lc_alarm->status = true;
+				lc_alarm.status = true;
 				bool val = true;
-				alarm_over_threshold_callback(val);
+				if(alarm_over_threshold_callback) 
+					alarm_over_threshold_callback(val);
 			}
 		}
 		else
-			lc_alarm->status = false; 
+			lc_alarm.status = false; 
 	}
 	
 }

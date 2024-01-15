@@ -158,7 +158,12 @@ static void mqtt_connected_callback (void)
 {
     uint8_t mac[6];
     esp_read_mac(mac,ESP_MAC_WIFI_STA);
-    device_topic = (char*)calloc(18,sizeof(char));
+    device_topic = (char*)malloc(18*sizeof(char));
+    if (!device_topic)
+    {
+        ESP_LOGE(TAG,"Set Topic Failed");
+        return;
+    }
     sprintf(device_topic,MACSTR,MAC2STR(mac));
     esp_mqtt_client_subscribe(client,device_topic, 0);
     ESP_LOGI(TAG, "sent subscribe successful TOPIC : %s MAC : "MACSTR,device_topic,MAC2STR(mac));

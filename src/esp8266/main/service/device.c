@@ -34,10 +34,8 @@
 static app_data_t* lc_app_data = NULL;
 static device_info_t* lc_device_info = NULL;
 static device_t* local_device = NULL;
-
 static device_info_t* init_device_info(void);
 static app_data_t* init_app_data(void);
-
 static const char* TAG = "DEVICE";
 //---------------------------------------//
 
@@ -46,8 +44,9 @@ device_t* init_local_device(void)
 {
 
 	ESP_LOGI(TAG,"Init Local Device");
-	local_device = (device_t*)calloc(1,sizeof(device_t));
+	local_device = (device_t*)malloc(sizeof(device_t));
 	if(!local_device) return NULL;
+	memset(local_device,0,sizeof(device_t));
 
 	local_device->info  = init_device_info();
 	local_device->sched = init_schedule();
@@ -58,8 +57,9 @@ device_t* init_local_device(void)
 
 static device_info_t* init_device_info(void)
 {
-	lc_device_info = (device_info_t*)calloc(1,sizeof(device_info_t));
+	lc_device_info = (device_info_t*)malloc(sizeof(device_info_t));
 	if(!lc_device_info) return NULL;
+	memset(lc_device_info,0,sizeof(device_info_t));
 
 	lc_device_info->id = 76543210;
 	lc_device_info->hard_ver = 1;
@@ -76,8 +76,9 @@ static device_info_t* init_device_info(void)
 static app_data_t* init_app_data(void)
 {
 
-	lc_app_data = (app_data_t*)calloc(1,sizeof(app_data_t));
+	lc_app_data = (app_data_t*)malloc(sizeof(app_data_t));
 	if(!lc_app_data) return NULL;
+	memset(lc_app_data,0,sizeof(app_data_t));
 	lc_app_data->relay = init_button();
 	lc_app_data->sensor = get_sensor_data_device();
 	return lc_app_data;

@@ -3,6 +3,7 @@
 set(COMPONENT_SRCS 
 	"driver/lcd.c"
 	"driver/io.c"
+	"driver/sig_pwm.c"
 	"driver/sensor.c"
 	"service/alarm.c"
 	"service/button.c"

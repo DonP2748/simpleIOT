@@ -137,9 +137,8 @@ static void parsing_data_receive_json(char* data)
 	cJSON* object; 
 	cJSON* element;
 
-	device_t* device = (device_t*)calloc(1,sizeof(device_t));
-	if(!device)
-		return;
+	device_t* device = (device_t*)malloc(sizeof(device_t));
+	if(!device)	return;
 
 	if(cJSON_HasObjectItem(dev,"schedule"))
 	{
@@ -336,16 +335,16 @@ static void create_schedule_object(schedule_t* sched)
 static void create_alarm_object(alarm_t* alarm)
 {
 	object_json = cJSON_AddObjectToObject(device_json, "alarm");
-	char buffer[3] = {0};
+	char buffer[6] = {0};
 
 
 	cJSON_AddItemToObject(object_json, "data",element_json);
 
-	sprintf(buffer,"%d",alarm->data->temp);
+	sprintf(buffer,"%02d",alarm->data->temp);
 	attribute_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(element_json, "temp",attribute_json);
 
-    sprintf(buffer,"%d",alarm->data->humi);
+    sprintf(buffer,"%02d",alarm->data->humi);
 	attribute_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(element_json, "humi",attribute_json);
 
@@ -398,9 +397,10 @@ static void create_alarm_object(alarm_t* alarm)
 static void create_device_info_object(device_info_t* dev_info)
 {
 	object_json = cJSON_AddObjectToObject(device_json, "device_info");
-	char* buffer = (char*)calloc(64,sizeof(char));
-	if(!buffer)
-		return;
+	char* buffer = (char*)malloc(64*sizeof(char));
+	if(!buffer)	return;
+	memset(buffer,0,sizeof(char));
+
 	sprintf(buffer,"%d",dev_info->id);
 	element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "id",element_json);
@@ -447,11 +447,11 @@ static void create_relay_object(uint8_t data)
 static void create_sensor_realtime_object(sensor_t* data)
 {
 	object_json = cJSON_AddObjectToObject(device_json, "sensor");
-	char buffer[4] = {0};
-	sprintf(buffer,"%d",data->temp);
+	char buffer[6] = {0};
+	sprintf(buffer,"%02d",data->temp);
 	element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "temp",element_json);
-    sprintf(buffer,"%d",data->humi);
+    sprintf(buffer,"%02d",data->humi);
 	element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "humi",element_json);
 }

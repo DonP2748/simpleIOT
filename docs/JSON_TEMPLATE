@@ -1,5 +1,5 @@
-#EXAMPLE JSON MSG
-{"schedule":{"dow":"6","hour":"23","minute":"06","value":"31","state":"1","repeat":"1","relay":"0"}}
+# EXAMPLE JSON MSG
+{"schedule":{"dow":"0","hour":"23","minute":"06","value":"31","state":"1","repeat":"1","relay":"0"}}
 {"schedule":{"dow":"6","hour":"14","minute":"32","value":"21","state":"1","repeat":"1","relay":"0"}}
 {"reboot":""}
 {"alarm":{"data":{"temp":"25","humi":"80"},"state":"1","status":"0"}}

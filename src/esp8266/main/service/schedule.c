@@ -178,7 +178,8 @@ static void show_date_time_lcd(bool arg)
 	{
 		now.temp = data->temp;
 		now.humi = data->humi;
-		sprintf(buff,"Temp:%02d Humi:%d",data->temp,data->humi);
+		sprintf(buff,"T:%02d H:%02d",data->temp,data->humi);
+		printf("%s\n",buff );
 		setCursor(0,1);
 		printstr(buff);
 	}

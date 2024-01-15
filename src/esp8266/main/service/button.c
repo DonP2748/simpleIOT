@@ -35,7 +35,7 @@
 //---------------------------------------//
 
 //--------------PRIVATE------------------//
-static relay_t* relay_output = NULL;
+static relay_t relay_output = {0};
 static bool mode_lcd = MODE_DATETIME;
 static void button_relay_change_handler(void);
 static void button_change_mode_handler(void);
@@ -50,10 +50,7 @@ relay_t* init_button(void)
 	init_io_device();
 	register_isr_mode_cb(button_change_mode_handler);
 	register_isr_relay_cb(button_relay_change_handler);
-
-	relay_output = (relay_t*)calloc(1,sizeof(relay_t));
-	if(!relay_output) return NULL;
-	return relay_output;
+	return &relay_output;
 }
 
 void register_relay_btn_change_cb(void(*callback)(bool arg))
@@ -75,8 +72,8 @@ bool get_lcd_showoff_mode(void)
 
 static void button_relay_change_handler(void)
 {
-	relay_output->value = !relay_output->value;
-	relay_btn_change_callback(relay_output->value);
+	relay_output.value = !relay_output.value;
+	relay_btn_change_callback(relay_output.value);
 }
 
 static void button_change_mode_handler(void)

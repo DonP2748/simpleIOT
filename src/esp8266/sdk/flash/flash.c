@@ -33,7 +33,8 @@
 bool write_spi_flash_items (char* item, char* data)
 {
 	char* FileName = item;
-	char* FilePath = (char*)calloc(strlen("/spiffs/") + strlen(FileName) + strlen(".txt"),sizeof(char));
+	char* FilePath = (char*)malloc((strlen("/spiffs/") + strlen(FileName) + strlen(".txt"))*sizeof(char));
+    if (FilePath) return 0;
 	strcat(FilePath,"/spiffs/");
 	strcat(FilePath,FileName);
 	strcat(FilePath,".txt");
@@ -53,7 +54,8 @@ bool write_spi_flash_items (char* item, char* data)
 bool read_spi_flash_items (char* item, char* data, uint32_t len)
 {
     char* FileName = item;
-    char* FilePath = (char*)calloc(strlen("/spiffs/") + strlen(FileName) + strlen(".txt"),sizeof(char));
+    char* FilePath = (char*)malloc((strlen("/spiffs/") + strlen(FileName) + strlen(".txt"))*sizeof(char));
+    if (FilePath) return 0;
     strcat(FilePath,"/spiffs/");
     strcat(FilePath,FileName);
     strcat(FilePath,".txt");
@@ -74,7 +76,8 @@ bool read_spi_flash_items (char* item, char* data, uint32_t len)
 bool erase_spi_flash_items (char* item)
 {
     char* FileName = item;
-    char* FilePath = (char*)calloc(strlen("/spiffs/") + strlen(FileName) + strlen(".txt"),sizeof(char));
+    char* FilePath = (char*)malloc((strlen("/spiffs/") + strlen(FileName) + strlen(".txt"))*sizeof(char));
+    if (FilePath) return 0;
     strcat(FilePath,"/spiffs/");
     strcat(FilePath,FileName);
     strcat(FilePath,".txt");

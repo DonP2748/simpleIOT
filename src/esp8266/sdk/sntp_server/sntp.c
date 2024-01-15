@@ -54,7 +54,8 @@ void init_sntp_update(void)
     tzset();
 
     //init local time
-    local_datetime = (struct tm*)calloc(1,sizeof(struct tm));
+    local_datetime = (struct tm*)malloc(sizeof(struct tm));
+    if (!local_datetime) return; 
     time(&now);
     localtime_r(&now, local_datetime);
 

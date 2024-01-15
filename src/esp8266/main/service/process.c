@@ -90,10 +90,6 @@ void init_device_process(void)
  	start_timer(100,process_send_response,NULL);
 }
 
-void main_process_notify(void)
-{
-	process_timer_events();
-}
 
 static char* build_sending_msg(void)
 {

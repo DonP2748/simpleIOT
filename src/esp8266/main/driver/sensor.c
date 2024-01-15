@@ -53,12 +53,10 @@ void sensor_init(void)
 
 esp_err_t sensor_read_data(sensor_t* data)
 {
-    int ret;
-    int16_t temp = 0;
-    int16_t humi = 0;
-    ret = dht_read_data(DHT_TYPE_DHT11,DHT_PIN,&humi,&temp);
-    data->temp = temp/10;
+    int temp,humi;
+    int ret = dht_read_data(DHT_TYPE_DHT11,DHT_PIN,&humi,&temp);
     data->humi = humi/10;
+    data->temp = temp/10;
     return ret;
 }
 
@@ -108,30 +106,35 @@ static inline bool dht_fetch_data(dht_sensor_type_t sensor_type, uint8_t pin, bo
     gpio_set_level(pin, 1);
 
     // Step through Phase 'B', 40us
-    if (!dht_await_pin_state(pin, 40, false, NULL)) {
+    if (!dht_await_pin_state(pin, 40, false, NULL))
+    {
         //ESP_LOGI(TAG,"Initialization error, problem in phase 'B'\n");
         return false;
     }
 
     // Step through Phase 'C', 88us
-    if (!dht_await_pin_state(pin, 88, true, NULL)) {
+    if (!dht_await_pin_state(pin, 88, true, NULL)) 
+    {
         //ESP_LOGI(TAG,"Initialization error, problem in phase 'C'\n");
         return false;
     }
 
     // Step through Phase 'D', 88us
-    if (!dht_await_pin_state(pin, 88, false, NULL)) {
+    if (!dht_await_pin_state(pin, 88, false, NULL)) 
+    {
         //ESP_LOGI(TAG,"Initialization error, problem in phase 'D'\n");
         return false;
     }
 
     // Read in each of the 40 bits of data...
     for (int i = 0; i < DHT_DATA_BITS; i++) {
-        if (!dht_await_pin_state(pin, 65, true, &low_duration)) {
+        if (!dht_await_pin_state(pin, 65, true, &low_duration)) 
+        {
             //ESP_LOGI(TAG,"LOW bit timeout\n");
             return false;
         }
-        if (!dht_await_pin_state(pin, 75, false, &high_duration)) {
+        if (!dht_await_pin_state(pin, 75, false, &high_duration)) 
+        {
             //ESP_LOGI(TAG,"HIGHT bit timeout\n");
             return false;
         }
@@ -171,17 +174,20 @@ static esp_err_t dht_read_data(dht_sensor_type_t sensor_type, gpio_num_t pin, in
     result = dht_fetch_data(sensor_type, pin, bits);
     taskEXIT_CRITICAL();
 
-    if (!result) {
+    if (!result) 
+    {
         return ESP_FAIL;
     }
 
-    for (uint8_t i = 0; i < DHT_DATA_BITS; i++) {
+    for (uint8_t i = 0; i < DHT_DATA_BITS; i++) 
+    {
         // Read each bit into 'result' byte array...
         data[i/8] <<= 1;
         data[i/8] |= bits[i];
     }
 
-    if (data[4] != ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
+    if (data[4] != ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) 
+    {
         //ESP_LOGI(TAG,"Checksum failed, invalid data received from sensor\n");
         return ESP_FAIL;
     }
@@ -189,7 +195,7 @@ static esp_err_t dht_read_data(dht_sensor_type_t sensor_type, gpio_num_t pin, in
     *humidity = dht_convert_data(sensor_type, data[0], data[1]);
     *temperature = dht_convert_data(sensor_type, data[2], data[3]);
 
-    // ESP_LOGI(TAG,"Sensor data: humidity=%d, temp=%d\n", *humidity, *temperature);
+    ESP_LOGI(TAG,"Sensor data: humidity=%d, temp=%d\n", *humidity, *temperature);
 
     return ESP_OK;
 }
@@ -198,9 +204,11 @@ static esp_err_t dht_read_float_data(dht_sensor_type_t sensor_type, gpio_num_t p
 {
     int16_t i_humidity, i_temp;
 
-    if (dht_read_data(sensor_type, pin, &i_humidity, &i_temp) == ESP_OK) {
-        *humidity = (float)i_humidity / 10;
+    if (dht_read_data(sensor_type, pin, &i_humidity, &i_temp) == ESP_OK) 
+    {
+        *humidity = (float)i_humidity / 10; //failed o day ?:D? rat kho hieu, print ra empty
         *temperature = (float)i_temp / 10;
+        ESP_LOGI(TAG,"Sensor data: humidity=%.2f, temp=%.2f\n",*humidity,*temperature); //in ra empty ca 2 t va h
         return ESP_OK;
     }
     return ESP_FAIL;
