@@ -23,7 +23,6 @@
 
 #include "alarm.h"
 #include "schedule.h"
-#include "button.h"
 
 #include "tcp/tcp.h"
 #include "mqtt/mqtt.h"
@@ -72,7 +71,9 @@ void create_json_msg(void)
 void relese_json_msg(void)
 {    
 	if(attribute_json != NULL)
+	{
     	cJSON_Delete(attribute_json);
+	}
     cJSON_Delete(element_json);
     cJSON_Delete(object_json);
     cJSON_Delete(device_json);
@@ -89,8 +90,8 @@ void create_object_json (uint8_t evt, void* dev)
 	device_t* create_dev = (device_t*)dev;
 	switch(evt)
 	{
-		// case SCHEDULE_EVENT:
-		// 	create_schedule_object(create_dev->sched);
+		 case SCHEDULE_EVENT:
+		 	create_schedule_object(create_dev->sched);
 			break;
 		case ALARM_EVENT:
 			create_alarm_object(create_dev->alarm);
@@ -111,7 +112,7 @@ void create_object_json (uint8_t evt, void* dev)
 			create_device_info_object(create_dev->info);
 			break;
 		case CONTROL_RELAY_EVENT:
-			create_relay_object(create_dev->data->relay->value);
+			create_relay_object(create_dev->data->relay);
 			break;
 		case SENSOR_DATA_EVENT:
 			create_sensor_realtime_object(create_dev->data->sensor);
@@ -142,44 +143,27 @@ static void parsing_data_receive_json(char* data)
 
 	if(cJSON_HasObjectItem(dev,"schedule"))
 	{
-		date_t time;
 		schedule_t sched;
 		device->sched = &sched;
-		device->sched->time = &time;
 		SET_EVENT_FLAG(SCHEDULE_EVENT);
 		object = cJSON_GetObjectItem(dev,"schedule");
-		if(cJSON_HasObjectItem(object,"time"))
+
+		if(cJSON_HasObjectItem(object,"dow"))
 		{
-			element = cJSON_GetObjectItem(object,"time");
-			if(cJSON_HasObjectItem(element,"year"))
-			{
-				device->sched->time->year = atoi(cJSON_GetObjectItem(element,"year")->valuestring);
-			}
-			if(cJSON_HasObjectItem(element,"month"))
-			{
-				device->sched->time->month = atoi(cJSON_GetObjectItem(element,"month")->valuestring);
-			}
-			if(cJSON_HasObjectItem(element,"day"))
-			{
-				device->sched->time->day = atoi(cJSON_GetObjectItem(element,"day")->valuestring);
-			}
-			if(cJSON_HasObjectItem(element,"dow"))
-			{
-				device->sched->time->dow = atoi(cJSON_GetObjectItem(element,"dow")->valuestring);
-			}
-			if(cJSON_HasObjectItem(element,"hour"))
-			{
-				device->sched->time->hour = atoi(cJSON_GetObjectItem(element,"hour")->valuestring);
-			}
-			if(cJSON_HasObjectItem(element,"minute"))
-			{
-				device->sched->time->minute = atoi(cJSON_GetObjectItem(element,"minute")->valuestring);
-			}
-			if(cJSON_HasObjectItem(element,"second"))
-			{
-				device->sched->time->second = atoi(cJSON_GetObjectItem(element,"second")->valuestring);
-			}
-			cJSON_Delete(element);
+			device->sched->dow = atoi(cJSON_GetObjectItem(object,"dow")->valuestring);
+		}
+		if(cJSON_HasObjectItem(object,"hour"))
+		{
+			device->sched->hour = atoi(cJSON_GetObjectItem(object,"hour")->valuestring);
+		}
+		if(cJSON_HasObjectItem(object,"minute"))
+		{
+			device->sched->minute = atoi(cJSON_GetObjectItem(object,"minute")->valuestring);
+		}
+
+		if(cJSON_HasObjectItem(object,"value"))
+		{
+			device->sched->value = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"state"))
 		{
@@ -266,12 +250,10 @@ static void parsing_data_receive_json(char* data)
 	}
 	if(cJSON_HasObjectItem(dev,"relay"))
 	{
-		relay_t relay;
 		app_data_t data;
 		device->data = &data;
-		device->data->relay = &relay;
 		SET_EVENT_FLAG(CONTROL_RELAY_EVENT);
-		device->data->relay->value = atoi(cJSON_GetObjectItem(dev,"relay")->valuestring);
+		device->data->relay = atoi(cJSON_GetObjectItem(dev,"relay")->valuestring);
 	}
 	// if(cJSON_HasObjectItem(dev,"sensor"))
 	// {
@@ -289,35 +271,21 @@ static void create_schedule_object(schedule_t* sched)
 	object_json = cJSON_AddObjectToObject(device_json,"schedule");
 	char buffer[5] = {0};
 
-    cJSON_AddItemToObject(object_json, "time",element_json);
+    sprintf(buffer,"%d",sched->dow);
+    element_json = cJSON_CreateString(buffer);
+    cJSON_AddItemToObject(object_json, "dow",element_json);
 
-	sprintf(buffer,"%d",sched->time->year);
-    attribute_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(element_json, "year",attribute_json);
+	sprintf(buffer,"%d",sched->hour);
+    element_json = cJSON_CreateString(buffer);
+    cJSON_AddItemToObject(object_json, "hour",element_json);
 
-    sprintf(buffer,"%d",sched->time->month);
-    attribute_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(element_json, "month",attribute_json);
+	sprintf(buffer,"%d",sched->minute);
+    element_json = cJSON_CreateString(buffer);
+    cJSON_AddItemToObject(object_json, "minute",element_json);
 
-	sprintf(buffer,"%d",sched->time->day);
-    attribute_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(element_json, "day",attribute_json);
-
-    sprintf(buffer,"%d",sched->time->dow);
-    attribute_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(element_json, "dow",attribute_json);
-
-	sprintf(buffer,"%d",sched->time->hour);
-    attribute_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(element_json, "hour",attribute_json);
-
-	sprintf(buffer,"%d",sched->time->minute);
-    attribute_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(element_json, "minute",attribute_json);
-
-	sprintf(buffer,"%d",sched->time->second);
-    attribute_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(element_json, "second",attribute_json);
+	sprintf(buffer,"%d",sched->value);
+    element_json = cJSON_CreateString(buffer);
+    cJSON_AddItemToObject(object_json, "value",element_json);
 
 	sprintf(buffer,"%d",sched->state);
     element_json = cJSON_CreateString(buffer);
@@ -336,7 +304,6 @@ static void create_alarm_object(alarm_t* alarm)
 {
 	object_json = cJSON_AddObjectToObject(device_json, "alarm");
 	char buffer[6] = {0};
-
 
 	cJSON_AddItemToObject(object_json, "data",element_json);
 
@@ -385,8 +352,6 @@ static void create_alarm_object(alarm_t* alarm)
 // 	element_json = cJSON_CreateString(key);
 //     cJSON_AddItemToObject(object_json, "secure_key",element_json);
 // }
-
-
 
 // static void create_ota_object(void)
 // {

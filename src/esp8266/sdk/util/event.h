@@ -14,7 +14,6 @@
 //---------------------------------------//
 
 //---------------MACRO-------------------//
-#define REGISTER_EVENT(e) 		init_register_event(e)
 #define CLEAR_EVENT_FLAG(e)		clear_event_flag(e)
 #define SET_EVENT_FLAG(e) 		set_event_flag(e)
 #define CHECK_EVENT_FLAG(e)		check_event_flag(e)
@@ -22,7 +21,6 @@
 #define CLEAR_ALL_EVENT			clear_all_event()
 //---------------------------------------//
 //--------------DECLARE------------------//
-bool init_register_event(uint8_t evt_sum);
 void clear_event_flag(uint8_t evt);
 void set_event_flag(uint8_t evt);
 bool check_event_flag(uint8_t evt);

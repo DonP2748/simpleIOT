@@ -34,27 +34,27 @@
 #include "mqtt/mqtt.h"
 #include "tcp/tcp.h"
 #include "wifi/wifi.h"
+#include "nvs_flash.h"
 
 #include "io.h"
 #include "alarm.h"
 #include "schedule.h"
-#include "button.h"
 #include "network.h"
 #include "process.h"
 #include "device.h"
 //---------------------------------------//
 
 //---------------GLOBAL------------------//
-#define internal_device_t device_t 
+#define RESPS_INTERVAL  	25
+#define SCHED_INTERVAL  	1000
+#define ALARM_INTERVAL		5000
+#define internal_device_t 	device_t 
+#define MQTT_PROTOCOL		0
+#define TCP4_PROCOTOL		1
 //---------------------------------------//
 
 //--------------PRIVATE------------------//
-
 internal_device_t* device = NULL;
-
-static void process_alarm(void*arg);
-static void process_schedule(void* arg);
-static void process_send_response(void* arg);
 static void send_data (uint8_t protocol, char* data);
 static void relay_event_handler(bool data);
 static void schedule_event_handler(schedule_t* sched);
@@ -68,28 +68,62 @@ static void update_sensor_event_handler(void);
 static char* build_sending_msg(void);
 static void clear_sending_msg(void);
 static void process_data_recv_callback(void* data);
-
+static void button_increase_handler(void);
+static void button_decrease_handler(void);
 static const char* TAG = "PROCESS";
 //---------------------------------------//
 
 void init_device_process(void)
 {
-	ESP_LOGI(TAG,"Init Device Process !");
-	REGISTER_EVENT(EVENT_DATA_SUM);
+	nvs_flash_init();
 	device = init_local_device();
 	register_alarm_over_threshold_cb(relay_event_handler);
-	register_schedule_times_up_cb(relay_event_handler);
-	register_relay_btn_change_cb(relay_event_handler);
-	register_mode_btn_change_cb(schedule_showoff_data);
-	
 	register_process_data_json_cb(process_data_recv_callback);
-
+	register_isr_inc_cb(button_increase_handler);
+	register_isr_dec_cb(button_decrease_handler);
 	init_json_process();
-	start_timer(100,process_alarm,NULL);
- 	start_timer(100,process_schedule,NULL);
- 	start_timer(100,process_send_response,NULL);
+	ESP_LOGI(TAG,"Init Device Process !");
 }
 
+
+
+void process_alarm(void* arg)
+{
+	while(1)
+	{
+		alarm_check_threshold();
+		SET_EVENT_FLAG(SENSOR_DATA_EVENT);
+		vTaskDelay(ALARM_INTERVAL/portTICK_RATE_MS);
+	}
+	vTaskDelete(NULL);
+}
+
+void process_schedule(void* arg)
+{
+ 	while(1)
+	{
+		schedule_showoff_data(0);
+ 		schedule_check_times_up(device->alarm->status);
+		vTaskDelay(SCHED_INTERVAL/portTICK_RATE_MS);
+	}
+	vTaskDelete(NULL);
+}
+
+void process_send_response(void* arg)
+{
+	while(1)
+	{
+		if((IS_EVENT_COME)&&(is_wifi_connected()))
+		{	
+			bool type = (is_internet_connected()) ? MQTT_PROTOCOL : TCP4_PROCOTOL;
+			char* data = build_sending_msg();
+			send_data(type,data);
+			clear_sending_msg();
+		}
+		vTaskDelay(RESPS_INTERVAL/portTICK_RATE_MS);
+	}
+	vTaskDelete(NULL);
+}
 
 static char* build_sending_msg(void)
 {
@@ -143,7 +177,7 @@ static void process_data_recv_callback(void* data)
 					device_info_event_handler();
 					break;
 				case CONTROL_RELAY_EVENT:
-					relay_event_handler(dev->data->relay->value);
+					relay_event_handler(dev->data->relay);
 					break;
 				case SENSOR_DATA_EVENT:
 					update_sensor_event_handler();
@@ -155,20 +189,22 @@ static void process_data_recv_callback(void* data)
 	}
 }
 
+
+static void button_increase_handler(void)
+{
+	device->sched->value++;
+}
+
+static void button_decrease_handler(void)
+{
+	device->sched->value--; 
+}
+
 static void schedule_event_handler(schedule_t* arg)
 {
-	schedule_t* sched = arg;
-	device->sched->time->year   = sched->time->year;
-	device->sched->time->month  = sched->time->month;
-	device->sched->time->day    = sched->time->day;
-	device->sched->time->dow    = sched->time->dow; 
-	device->sched->time->hour   = sched->time->hour;
-	device->sched->time->minute = sched->time->minute;
-	device->sched->time->second = sched->time->second;
-	device->sched->state 		= sched->state;
-	device->sched->repeat 		= sched->repeat;
-	device->sched->relay 		= sched->relay;
-	
+	//do something ...
+	schedule_t *sched = arg;
+	schedule_create(sched);
 }
 
 static void alarm_event_handler(alarm_t* arg)
@@ -177,7 +213,7 @@ static void alarm_event_handler(alarm_t* arg)
 	device->alarm->data->temp = alarm->data->temp;
 	device->alarm->data->humi = alarm->data->humi;
 	device->alarm->state      = alarm->state;
-	device->alarm->status      = alarm->status;
+	device->alarm->status     = alarm->status;
 }
 
 static void reset_factory_event_handler(void)
@@ -236,49 +272,20 @@ static void update_sensor_event_handler(void)
 
 static void relay_event_handler(bool data)
 {
-	device->data->relay->value = data;
+	device->data->relay = data;
 	set_relay_value(data);
 }	
 
-#define MQTT_PROTOCOL	0
-#define TCP4_PROCOTOL	1
 static void send_data (uint8_t protocol, char* data)
 {
 	if(!protocol)
 	{
 		mqtt_publish_data_on_topic(NULL,data);
 	}
-	else
-		tcp_server_push_notify(data); 
-}
-
-
-static void process_send_response(void* arg)
-{
-	if((IS_EVENT_COME)&&(is_wifi_connected()))
+	else 
 	{
-		bool type = (is_internet_connected()) ? MQTT_PROTOCOL : TCP4_PROCOTOL;
-		char* data = build_sending_msg();
-		send_data(type,data);
-		clear_sending_msg();
+	 	tcp_server_push_notify(data); 
 	}
-	start_timer(RESPS_INTERVAL,process_send_response,NULL);
 }
 
-static void process_schedule(void* arg)
-{
- 	schedule_update_realtime();
- 	schedule_check_times_up(device->alarm->status);
- 	start_timer(SCHED_INTERVAL,process_schedule,NULL);
-}
 
-static void process_alarm(void* arg)
-{
-	alarm_check_threshold();
-	SET_EVENT_FLAG(SENSOR_DATA_EVENT);
-	if(get_lcd_showoff_mode()==MODE_DATETIME)
-	{
-		schedule_showoff_data(MODE_DATETIME);
-	}
-	start_timer(ALARM_INTERVAL,process_alarm,NULL);
-}

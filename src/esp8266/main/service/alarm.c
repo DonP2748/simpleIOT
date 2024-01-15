@@ -24,19 +24,19 @@
 #include "esp_log.h"
 
 #include "io.h"
-#include "button.h"
 #include "sensor.h"
 #include "alarm.h"
 //---------------------------------------//
 
 //---------------GLOBAL------------------//
-
+#define MAX_OVERHEAT_COUNT 		6
 //---------------------------------------//
 
 //--------------PRIVATE------------------//
 static sensor_t dht = {0};
 static sensor_t threshold = {0};
 static alarm_t lc_alarm = {0};
+static uint8_t overheat_cnt = 0;
 static void(*alarm_over_threshold_callback)(bool arg);
 static const char *TAG = "ALARM";
 //---------------------------------------//
@@ -63,16 +63,28 @@ void alarm_check_threshold(void)
 	{
 		if((dht.temp >= lc_alarm.data->temp)|(dht.humi >= lc_alarm.data->humi))
 		{
-			if(!lc_alarm.status)
+			if(overheat_cnt < MAX_OVERHEAT_COUNT)
+			{
+				overheat_cnt++;
+			}
+			if((!lc_alarm.status)&(overheat_cnt== MAX_OVERHEAT_COUNT))
 			{
 				lc_alarm.status = true;
 				bool val = true;
-				if(alarm_over_threshold_callback) 
+				if(alarm_over_threshold_callback)
+				{
 					alarm_over_threshold_callback(val);
+				} 
 			}
 		}
 		else
-			lc_alarm.status = false; 
+		{
+			overheat_cnt--;
+			if(overheat_cnt == 0)
+			{
+				lc_alarm.status = false;
+			}
+		}  
 	}
 	
 }
@@ -80,5 +92,7 @@ void alarm_check_threshold(void)
 void register_alarm_over_threshold_cb(void(*callback)(bool arg))
 {
 	if(callback)
+	{
 		alarm_over_threshold_callback = callback;
+	}
 }

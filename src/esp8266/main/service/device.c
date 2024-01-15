@@ -23,7 +23,7 @@
 #include <sys/stat.h>
 #include "esp_err.h"
 #include "esp_log.h"
-
+#include "io.h"
 #include "device.h"
 //---------------------------------------//
 
@@ -75,11 +75,10 @@ static device_info_t* init_device_info(void)
 
 static app_data_t* init_app_data(void)
 {
-
+	init_io_device();
 	lc_app_data = (app_data_t*)malloc(sizeof(app_data_t));
 	if(!lc_app_data) return NULL;
 	memset(lc_app_data,0,sizeof(app_data_t));
-	lc_app_data->relay = init_button();
 	lc_app_data->sensor = get_sensor_data_device();
 	return lc_app_data;
 }

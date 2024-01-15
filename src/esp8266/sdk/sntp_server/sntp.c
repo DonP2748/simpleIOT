@@ -39,7 +39,6 @@ static const char *TAG = "SNTP";
 
 void init_sntp_update(void)
 {
-    ESP_LOGI(TAG,"STNP Init Local Date Time");
     struct tm timeinfo;
     time_t now;
     time(&now);
@@ -58,9 +57,7 @@ void init_sntp_update(void)
     if (!local_datetime) return; 
     time(&now);
     localtime_r(&now, local_datetime);
-
-
-
+    ESP_LOGI(TAG,"STNP Init Local Date Time");
 }
 
 struct tm* get_datetime(void)
@@ -93,12 +90,9 @@ static void obtain_time(void)
     // wait for time to be set
     time_t now = 0;
     struct tm timeinfo = { 0 };
-    int retry = 0;
-    const int retry_count = 10;
 
-    while (timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) 
+    while (timeinfo.tm_year < (2016 - 1900))
     {
-        //ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
         time(&now);
         localtime_r(&now, &timeinfo);

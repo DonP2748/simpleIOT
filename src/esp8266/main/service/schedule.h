@@ -14,6 +14,7 @@
 //---------------------------------------//
 
 //---------------MACRO-------------------//
+
 typedef struct date_t 
 {
 	int year;
@@ -27,8 +28,11 @@ typedef struct date_t
 
 typedef struct schedule_t
 {
-  	//void (*callback)(void* data);	
-	date_t* time;
+	uint8_t dow;
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t value;
+	uint8_t index;
 	bool state;
 	bool repeat;
 	bool relay;
@@ -39,8 +43,8 @@ typedef struct schedule_t
 //--------------DECLARE------------------//
 schedule_t* init_schedule (void);
 void schedule_showoff_data(void* arg);
-void schedule_update_realtime(void);
 void schedule_check_times_up(int warning);
-void register_schedule_times_up_cb (void(*callback)(bool arg));
+void schedule_create(schedule_t *sched);
+void schedule_delete(schedule_t *sched);
 //---------------------------------------//
 #endif//_SCHEDULE_H_

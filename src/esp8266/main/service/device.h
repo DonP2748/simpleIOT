@@ -13,7 +13,6 @@
 //--------------INCLUDE------------------//
 #include "alarm.h"
 #include "schedule.h"
-#include "button.h"
 //---------------------------------------//
 
 //---------------MACRO-------------------//
@@ -32,7 +31,7 @@ typedef struct device_info_t
 
 typedef struct app_data_t 
 {
-	relay_t*		relay;
+	bool			relay;
 	sensor_t* 		sensor;
 } app_data_t;
 

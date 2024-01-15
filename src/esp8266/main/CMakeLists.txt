@@ -6,7 +6,6 @@ set(COMPONENT_SRCS
 	"driver/sig_pwm.c"
 	"driver/sensor.c"
 	"service/alarm.c"
-	"service/button.c"
 	"service/schedule.c"
 	"service/device.c"
 	"service/jsonparse.c"

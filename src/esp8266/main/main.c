@@ -14,7 +14,6 @@
 #include "esp_task_wdt.h"
 #include "esp_system.h"
 #include "esp_log.h"
-#include "nvs_flash.h"
 #include "timer/systimer.h"
 #include <stdio.h>
 #include "service/process.h"
@@ -35,18 +34,12 @@ static const char *TAG = "MAIN";
 
 void app_main()
 {
-    int a = 0;
-    nvs_flash_init();
-    esp_task_wdt_reset();
-//    init_device_process();
-//    init_network_process();
 
-    while (1) 
-    {
-        // usleep(53);    
-        // ets_delay_us(10);
-        esp_task_wdt_reset();
-        vTaskDelay(1/portTICK_RATE_MS);
-    }
+    init_device_process();
+    init_network_process();
+
+    xTaskCreate(process_alarm, "process_alarm", 4096, NULL, 3, NULL);
+    xTaskCreate(process_schedule, "process_schedule", 4096, NULL, 3, NULL);
+    xTaskCreate(process_send_response, "process_send_response", 4096, NULL, 3, NULL);
 }
 

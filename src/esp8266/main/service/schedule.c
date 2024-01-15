@@ -26,7 +26,6 @@
 
 
 #include "lcd.h"
-#include "button.h"
 #include "sensor.h"
 #include "alarm.h"
 #include "schedule.h"
@@ -36,145 +35,54 @@
 //---------------GLOBAL------------------//
 #define ON 				1
 #define OFF  			0
+#define MAXSIZE_LCD		16+1
+#define MAX_SCHEDULE 	8
+#define SCHED_TIME(h,m) (uint32_t)(h*100+m)
 
-#define MAXSIZE_LCD	16+1
 typedef enum week {Sun, Mon, Tue, Wed, Thur, Fri, Sat} week;
-//---------------------------------------//
 
+//---------------------------------------//
 //--------------PRIVATE------------------//
 static sensor_t now = {0};
 static date_t calendar = {0};
-static date_t* time_sched = NULL;
-static schedule_t* lc_sched = NULL;
+static schedule_t *sched_now = NULL;
+static schedule_t *sched_nxt = NULL;
+static schedule_t *lc_sched[MAX_SCHEDULE] = {0};
+static void sort_schedule(void);
+static schedule_t *get_next_schedule(uint8_t arg);
 static char* get_dow(int day);
 static char* get_state(bool state);
-static void show_date_time_lcd(bool arg);
-static void show_schedule_lcd(void);
-static void (*schedule_times_up_callback)(bool arg);
-static bool pre_mode = 0;
 static const char *TAG = "SCHEDULE";
 //---------------------------------------//
 
 schedule_t* init_schedule (void)
 {
 	init_lcd();
-	//schedule_showoff_data(MODE_DATETIME);
 	ESP_LOGI(TAG,"Init Schedule Module!");
-	
-	time_sched = (date_t*)calloc(1,sizeof(date_t));
-	if(!time_sched) return NULL;
-	lc_sched = (schedule_t*)calloc(1,sizeof(schedule_t));
-	if(!lc_sched) return NULL;
-
-	lc_sched->time = time_sched;
-	return lc_sched;
+	return sched_now;
 }
 
-void schedule_check_times_up(int warning)
-{
-	if(!lc_sched->state)
-	{
-		return ;
-	}
-	if(warning) return;
-	if(calendar.dow == lc_sched->time->dow)
-	{
-		if(calendar.day == lc_sched->time->day)
-		{
-			if(calendar.month == lc_sched->time->month)
-			{
-				if(calendar.year == lc_sched->time->year)
-				{
-					if(calendar.hour == lc_sched->time->hour)
-					{	
-						if(calendar.minute == lc_sched->time->minute)
-						{
-							if(calendar.second == lc_sched->time->second)
-							{
-								schedule_times_up_callback(&(lc_sched->relay));
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return ;
-}
-
-void schedule_update_realtime (void)
-{
-	struct tm* time_update = get_datetime();
-	if(time_update == NULL) return;
-	calendar.year = time_update->tm_year + 1900;//offset year la 1900
-	calendar.month = time_update->tm_mon + 1;	//range tu 0-11
-	calendar.day = time_update->tm_mday;		//range tu 1-31 ??
-	calendar.dow = time_update->tm_wday;		//ngay dau tien la chu nhat = 0
-	calendar.hour = time_update->tm_hour;		//may cai time nay khong biet co sai k nua
-	calendar.minute = time_update->tm_min;
-	calendar.second = time_update->tm_sec;
-}
 
 void schedule_showoff_data(void* arg)
 {
-	bool* type = (bool*)arg;
-	if(type)
-	{
-		show_schedule_lcd();
-		pre_mode = MODE_SCHEDULE;
-	}
-	else
-	{
-		show_date_time_lcd(pre_mode);
-		pre_mode = MODE_DATETIME;
-	} 
-
-}
-
-void register_schedule_times_up_cb (void(*callback)(bool arg))
-{
-	if(callback)
-		schedule_times_up_callback = callback;
-}
-
-static void show_schedule_lcd(void)
-{
-	char* buff = (char*)calloc(MAXSIZE_LCD,sizeof(char));
-	if(!buff) return;
-
-	home();
-	clear();
-	setCursor(0,0);
-	char* state = get_state(lc_sched->state);
-	char* relay = get_state(lc_sched->relay);
-	sprintf(buff,"Sched:%s",state);
-	printstr(buff);
-	setCursor(10,0);
-	sprintf(buff,"RL:%s",relay);
-	printstr(buff);
-	setCursor(0,1);
-	sprintf(buff,"  TIME: %02d:%02d  ",lc_sched->time->hour,lc_sched->time->minute);
-	printstr(buff);
-	free(buff);
-}
-
-static void show_date_time_lcd(bool arg)
-{
-	char* buff = (char*)calloc(MAXSIZE_LCD,sizeof(char));
-	if(!buff) return;
-
+	static int threshold_tmp = 0;
+	static int state_tmp = 0;
+	char buff[MAXSIZE_LCD] = {0};
 	char* dow = get_dow(calendar.dow);
 	if(arg)
 	{
 		home();
 		clear();
 	}
-	setCursor(0,0);
-	sprintf(buff,"%s, %02d-%02d-%04d",dow,calendar.day,calendar.month,calendar.year);
-	printstr(buff);
+	if((threshold_tmp != sched_now->value)|(state_tmp != sched_now->state))
+	{
+		setCursor(0,0);
+		sprintf(buff,"THRESHOLD:%02d %s",sched_now->value,get_state(sched_now->state));
+		printstr(buff);
+	}
 
 	sensor_t* data = get_sensor_data_device();
-	if((now.temp != data->temp)||(now.humi != data->humi)||(arg))
+	if((now.temp != data->temp)||(now.humi != data->humi))
 	{
 		now.temp = data->temp;
 		now.humi = data->humi;
@@ -183,10 +91,129 @@ static void show_date_time_lcd(bool arg)
 		setCursor(0,1);
 		printstr(buff);
 	}
-	free(buff);
 }
 
 
+void schedule_check_times_up(int warning)
+{
+	bool checked = false;
+	struct tm* time_update = get_datetime();
+	if(time_update == NULL) 
+	{
+		return;
+	}
+	if((time_update->tm_wday == sched_nxt->dow)&&\
+	(SCHED_TIME(sched_nxt->hour,sched_nxt->minute) == SCHED_TIME(time_update->tm_hour,time_update->tm_min)))
+	{
+		if(checked == false)
+		{
+			sched_now = sched_nxt;
+			sched_nxt = get_next_schedule(sched_now->index);
+			checked = true;
+		}
+	}
+	else 
+	{
+		checked = false;
+	}
+}
+
+
+void schedule_create(schedule_t *sched)
+{
+	int index;
+	for(index = 0; index < MAX_SCHEDULE; index++)
+	{
+		if((lc_sched[index]->dow == sched->dow)&&\
+		(SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) == SCHED_TIME(sched->hour,sched->minute)))
+		{
+			free(lc_sched[index]); 	//unique
+		}
+		if(lc_sched[index] == NULL)
+		{
+			lc_sched[index] = (schedule_t*)malloc(sizeof(schedule_t));
+			if(!lc_sched[index])
+			{	
+				return;	
+			}
+			memset(lc_sched[index],0,sizeof(schedule_t));
+
+			lc_sched[index]->index = index;
+			lc_sched[index]->dow = sched->dow;
+			lc_sched[index]->hour = sched->hour;
+			lc_sched[index]->minute = sched->minute;
+			lc_sched[index]->value = sched->value;
+			lc_sched[index]->state = sched->state;
+			lc_sched[index]->repeat = sched->repeat;
+			lc_sched[index]->relay = sched->relay;
+			break;
+		}
+	}
+	//sort here
+	sort_schedule();
+}
+
+void schedule_delete(schedule_t *sched)
+{
+	int index;
+	for(index = 0; index < MAX_SCHEDULE; index++)
+	{
+		if((lc_sched[index] != NULL)&&(lc_sched[index]->dow == sched->dow)&&\
+		(SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) == SCHED_TIME(sched->hour,sched->minute)))
+		{
+			free(lc_sched[index]);
+			return;
+		}
+	}
+}
+
+
+static void sort_schedule(void)
+{
+	int i,j;
+	bool wrapped;
+	//bubble sort
+	for(i = 0; i < MAX_SCHEDULE-1; i++)
+	{
+		for(j = 0;j < MAX_SCHEDULE-i-1;j++)
+		{
+			if((lc_sched[j] != NULL)&&((lc_sched[j]->dow > lc_sched[j+1]->dow)||((lc_sched[j]->dow == lc_sched[j+1]->dow)&\
+			(SCHED_TIME(lc_sched[j]->hour,lc_sched[j]->minute) > SCHED_TIME(lc_sched[j+1]->hour,lc_sched[j+1]->minute)))))
+			{
+				int temp = lc_sched[j]->index;
+				lc_sched[j]->index = lc_sched[j+1]->index;
+				lc_sched[j+1]->index = temp;
+				wrapped = true;
+			}
+		}
+		if(wrapped == false)
+		{
+			break;
+		}
+	}
+}
+
+static schedule_t *get_next_schedule(uint8_t arg)
+{
+	int i;
+	int index = arg;
+	if(index == MAX_SCHEDULE-1)
+	{
+		index = 0;
+	}
+	else 
+	{
+		index += 1;
+	}
+	for(i = 0; i < MAX_SCHEDULE; i++)
+	{
+		if((lc_sched[i] != NULL)&&(lc_sched[i]->index == index))
+		{
+			return lc_sched[i];
+		}
+	}
+	return NULL;
+}
 
 static char* get_dow(int day)
 {
@@ -219,3 +246,6 @@ static char* get_state(bool state)
 	else 
 		return "OFF"; 
 }
+
+
+

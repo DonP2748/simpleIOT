@@ -20,7 +20,7 @@
 void init_io_device(void);
 void set_relay_value(bool relay);
 bool get_relay_value(bool relay);
-void register_isr_mode_cb(void(*callback)(void));
-void register_isr_relay_cb(void(*callback)(void));
+void register_isr_inc_cb(void(*callback)(void));
+void register_isr_dec_cb(void(*callback)(void));
 //---------------------------------------//
 #endif//_IO_H_

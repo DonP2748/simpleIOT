@@ -14,13 +14,12 @@
 //---------------------------------------//
 
 //---------------MACRO-------------------//
-#define RESPS_INTERVAL  25
-#define SCHED_INTERVAL  1000
-#define ALARM_INTERVAL	5000
 //---------------------------------------//
 
 //--------------DECLARE------------------//
 void init_device_process(void);
-void main_process_notify(void);
+void process_alarm(void* arg);
+void process_schedule(void* arg);
+void process_send_response(void* arg);
 //---------------------------------------//
 #endif//_PROCESS_H_
