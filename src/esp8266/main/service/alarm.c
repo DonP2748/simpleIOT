@@ -41,7 +41,7 @@ static void(*alarm_over_threshold_callback)(bool arg);
 static const char *TAG = "ALARM";
 //---------------------------------------//
 
-alarm_t* init_alarm(void)
+alarm_t *init_alarm(void)
 {
 	sensor_init();
 	ESP_LOGI(TAG,"Init Alarm!");
@@ -49,7 +49,7 @@ alarm_t* init_alarm(void)
 	return &lc_alarm;
 }
 
-sensor_t* get_sensor_data_device(void)
+sensor_t *get_sensor_data_device(void)
 {
 	return &dht;
 }

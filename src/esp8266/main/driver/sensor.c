@@ -215,9 +215,9 @@ static esp_err_t dht_read_float_data(dht_sensor_type_t sensor_type, gpio_num_t p
 
     if (dht_read_data(sensor_type, pin, &i_humidity, &i_temp) == ESP_OK) 
     {
-        *humidity = (float)i_humidity / 10; //failed o day ?:D? rat kho hieu, print ra empty
+        *humidity = (float)i_humidity / 10; 
         *temperature = (float)i_temp / 10;
-        ESP_LOGI(TAG,"Sensor data: humidity=%.2f, temp=%.2f\n",*humidity,*temperature); //in ra empty ca 2 t va h
+        //ESP_LOGI(TAG,"Sensor data: humidity=%.2f, temp=%.2f\n",*humidity,*temperature); 
         return ESP_OK;
     }
     return ESP_FAIL;

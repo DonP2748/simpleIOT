@@ -34,7 +34,6 @@
 #include "mqtt/mqtt.h"
 #include "tcp/tcp.h"
 #include "wifi/wifi.h"
-#include "nvs_flash.h"
 #include "sensor.h"
 #include "pid.h"
 #include "io.h"
@@ -77,7 +76,6 @@ static const char* TAG = "PROCESS";
 
 void init_device_process(void)
 {
-	nvs_flash_init();
 	device = init_local_device();
 	register_alarm_over_threshold_cb(relay_event_handler);
 	register_process_data_json_cb(process_data_recv_callback);
@@ -127,7 +125,7 @@ void process_send_response(void* arg)
 	vTaskDelete(NULL);
 }
 
-#define EXAMPLE_MAX_PID_OUT 	(1800*10)
+#define EXAMPLE_MAX_PID_OUT 	(1800*10/2)
 
 void process_control_power(void* arg)
 {
@@ -145,7 +143,7 @@ void process_control_power(void* arg)
 		sensor_read_float_data(&temp,&humi);		
 		PIDController_Update(pid,setpoint,temp,false); 
 //		ESP_LOGI(TAG,"PID OUT SIGNAL : %d",(int)pid->out);
-//		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)temp,(int)humi,(int)setpoint);
+		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)temp,(int)humi,(int)setpoint);
 		//example for pid, need specific algorithms for each specific case
 		//assuming that default threshold need 50% to maintain
 		//if temparature is higher then need more power to cool it down and vice versa 
@@ -237,6 +235,7 @@ static void schedule_event_handler(schedule_t* arg)
 	//do something... example
 	schedule_t *sched = arg;
 	schedule_create(sched);
+	//should call schedule_remove() somewhere
 }
 
 static void alarm_event_handler(alarm_t* arg)
@@ -310,14 +309,14 @@ static void relay_event_handler(bool data)
 
 static void send_data (uint8_t protocol, char* data)
 {
-	if(protocol == MQTT_PROTOCOL)
-	{
-		mqtt_publish_data_on_topic(NULL,data);
-	}
-	else if(protocol == TCP4_PROCOTOL)
-	{
+//	if(protocol == MQTT_PROTOCOL)
+//	{
+//		mqtt_publish_data_on_topic(NULL,data);
+//	}
+//	else if(protocol == TCP4_PROCOTOL)
+//	{
 	 	tcp_server_push_notify(data); 
-	}
+//	}
 }
 
 

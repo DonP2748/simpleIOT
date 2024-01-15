@@ -26,7 +26,8 @@ typedef void(*wifi_config_callback_t)(int event, void* arg);
 
 //--------------DECLARE------------------//
 bool is_wifi_connected(void);
-void wifi_config_start(wifi_config_callback_t callback);
+void wifi_normal_start(void);
+void wifi_config_start(void *arg);
 void register_wifi_status_callback(void(*callback)(int status));
 //---------------------------------------//
 #endif//_WIFI_H

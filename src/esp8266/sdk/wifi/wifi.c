@@ -48,27 +48,37 @@ bool is_wifi_connected(void)
 {
     return wifi_connected;
 }
-void wifi_config_start(wifi_config_callback_t callback)
+void wifi_config_start(void* arg)
 {
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_wifi_stop());
+    ESP_ERROR_CHECK(esp_wifi_deinit());
+
     s_wifi_event_group = xEventGroupCreate();
-
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(SC_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
-    if(callback != NULL)
-    {
-        wifi_config_callback = callback;
-    }
+}
+
+void wifi_normal_start(void)
+{
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    esp_wifi_connect();
 }
 
 void register_wifi_status_callback(void(*callback)(int status))
@@ -85,17 +95,20 @@ static void wifi_smartconfig_task(void * parm)
     smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_smartconfig_start(&cfg));
 
-    while (1) {
+    while (1) 
+    {
         uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY); 
-        if(uxBits & CONNECTED_BIT) {
+        if(uxBits & CONNECTED_BIT) 
+        {
             ESP_LOGI(TAG, "WiFi Connected to ap");
         }
-        if(uxBits & ESPTOUCH_DONE_BIT) {
+        if(uxBits & ESPTOUCH_DONE_BIT) 
+        {
             ESP_LOGI(TAG, "smartconfig over");
             esp_smartconfig_stop();
             if(wifi_config_callback != NULL)
             {
-                wifi_config_callback(WIFI_CONFIG_EVENT_DONE,NULL); //smart config xong thi lam gi do o day
+                wifi_config_callback(WIFI_CONFIG_EVENT_DONE,NULL); //smart config done, do something there
             }
             vTaskDelete(NULL);
         }

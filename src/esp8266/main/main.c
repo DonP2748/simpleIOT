@@ -14,6 +14,7 @@
 #include "esp_task_wdt.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "nvs_flash.h"
 #include "timer/systimer.h"
 #include <stdio.h>
 #include "service/process.h"
@@ -34,13 +35,13 @@ static const char *TAG = "MAIN";
 
 void app_main()
 {
-
-    init_device_process();
+    nvs_flash_init();
+//    init_device_process();
     init_network_process();
-
-    xTaskCreate(process_alarm, "process_alarm", 2048, NULL, 3, NULL);
-    xTaskCreate(process_schedule, "process_schedule", 2048, NULL, 3, NULL);
-    xTaskCreate(process_send_response, "process_send_response", 2048, NULL, 3, NULL);
-    xTaskCreate(process_control_power, "process_control_power", 2048, NULL, 3, NULL);
+    ESP_LOGI(TAG,"HELLO EMBEDDED WORLD!");
+//    xTaskCreate(process_alarm, "process_alarm", 2048, NULL, 3, NULL);
+//    xTaskCreate(process_schedule, "process_schedule", 2048, NULL, 3, NULL);
+//    xTaskCreate(process_send_response, "process_send_response", 2048, NULL, 3, NULL);
+//    xTaskCreate(process_control_power, "process_control_power", 2048, NULL, 3, NULL);
 }
 

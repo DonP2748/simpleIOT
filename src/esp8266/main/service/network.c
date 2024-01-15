@@ -34,7 +34,7 @@
 //---------------------------------------//
 
 //---------------GLOBAL------------------//
-#define MAX_WIFI_TIMEOUT		5000//60000
+#define MAX_WIFI_TIMEOUT		30000//5000 30000
 #define MAX_NETWORK_TIMEOUT 	2000
 //---------------------------------------//
 
@@ -50,10 +50,9 @@ void init_network_process(void)
 {
 	ESP_LOGI(TAG,"Init Network !");
 	register_wifi_status_callback(wifi_event_callback);
-	if(!is_wifi_connected())
-	{
-		start_timer(MAX_WIFI_TIMEOUT,setup_wifi,NULL);
-	}
+	wifi_normal_start();
+	start_timer(MAX_WIFI_TIMEOUT,setup_wifi,NULL);
+	
 }
 
 void get_network_info(int* rssi,char* mac,char* ssid, uint32_t* ip)
@@ -107,6 +106,7 @@ static void setup_wifi(void* arg)
 		wifi_config_start(NULL);
 	}
 }
+
 
 static void setup_network(void*arg)
 {
