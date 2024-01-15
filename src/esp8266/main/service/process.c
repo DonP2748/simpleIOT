@@ -225,7 +225,7 @@ static void process_data_recv_callback(void* data)
 static void button_increase_handler(void)
 {
 	// Do not call ESP_LOGI in there, It will be crashed
-	device->sched->value++;
+	device->sched->value++; 
 }
 
 static void button_decrease_handler(void)

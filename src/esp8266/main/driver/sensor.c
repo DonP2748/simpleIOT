@@ -65,8 +65,8 @@ esp_err_t sensor_read_data(sensor_t* data)
     int ret = dht_read_data(DHT_TYPE_DHT11,DHT_PIN,&humi,&temp);
     data->humi = (int)humi/10;
     data->temp = (int)temp/10;
-    data->fhumi = (float)temp / 10; 
-    data->ftemp = (float)humi / 10;
+    data->fhumi = (float)humi / 10; 
+    data->ftemp = (float)temp / 10;
     return ret;
 }
 

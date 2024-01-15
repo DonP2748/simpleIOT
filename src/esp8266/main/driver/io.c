@@ -127,13 +127,13 @@ void register_isr_inc_cb(void(*callback)(void))
 
 static void debounce_decrease_release(void* arg)
 {
-	debounce_increase_btn = false;
+	debounce_decrease_btn = false; 
 }
 
 
 static void debounce_increase_release(void* arg)
 {
-	debounce_decrease_btn = false;
+	debounce_increase_btn = false;
 }
 
 
