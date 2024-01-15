@@ -313,14 +313,14 @@ static void relay_event_handler(bool data)
 
 static void send_data (uint8_t protocol, char* data)
 {
-//	if(protocol == MQTT_PROTOCOL)
-//	{
-//		mqtt_publish_data_on_topic(NULL,data);
-//	}
-//	else if(protocol == TCP4_PROCOTOL)
-//	{
+	if(protocol == MQTT_PROTOCOL)
+	{
+		mqtt_publish_data_on_topic(NULL,data);
+	}
+	else if(protocol == TCP4_PROCOTOL)
+	{
 	 	tcp_server_push_notify(data); 
-//	}
+	}
 }
 
 

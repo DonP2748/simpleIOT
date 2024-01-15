@@ -135,23 +135,20 @@ void register_process_data_json_cb(void(*callback)(void* data))
 static void parsing_data_receive_json(char* data)
 {
 	cJSON *dev = cJSON_Parse(data);
-	cJSON* object; 
-	cJSON* element;
-
-	device_t* device = (device_t*)malloc(sizeof(device_t));
+	cJSON *object; 
+	cJSON *element;
+	device_t *device = (device_t*)malloc(sizeof(device_t));
 	if(!device)	return;
-
 	if(cJSON_HasObjectItem(dev,"schedule"))
 	{
-		schedule_t sched;
+		schedule_t sched = {0};
 		device->sched = &sched;
 		SET_EVENT_FLAG(SCHEDULE_EVENT);
 		object = cJSON_GetObjectItem(dev,"schedule");
 
 		if(cJSON_HasObjectItem(object,"dow"))
-		{
+		{	
 			device->sched->dow = atoi(cJSON_GetObjectItem(object,"dow")->valuestring);
-			printf("AAAAAAAAAAAAAAA %d",device->sched->dow);
 		}
 		if(cJSON_HasObjectItem(object,"hour"))
 		{
@@ -165,7 +162,6 @@ static void parsing_data_receive_json(char* data)
 		if(cJSON_HasObjectItem(object,"value"))
 		{
 			device->sched->value = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
-			printf("AAAAAAAAAAAAAAA %d",device->sched->value);
 		}
 		if(cJSON_HasObjectItem(object,"state"))
 		{
@@ -181,10 +177,11 @@ static void parsing_data_receive_json(char* data)
 		}
 		cJSON_Delete(object);
 	}
+
 	if(cJSON_HasObjectItem(dev,"alarm"))
 	{
-		alarm_t alarm;
-		sensor_t data;
+		alarm_t alarm = {0};
+		sensor_t data = {0};
 		device->alarm = &alarm;
 		device->alarm->data = &data;
 		SET_EVENT_FLAG(ALARM_EVENT);
@@ -222,7 +219,7 @@ static void parsing_data_receive_json(char* data)
 	}
 	if(cJSON_HasObjectItem(dev,"change_wifi"))
 	{
-		device_info_t info;
+		device_info_t info = {0};
 		device->info = &info;
 		SET_EVENT_FLAG(CHANGE_WIFI_EVENT);
 		object = cJSON_GetObjectItem(dev,"change_wifi");
@@ -252,7 +249,7 @@ static void parsing_data_receive_json(char* data)
 	}
 	if(cJSON_HasObjectItem(dev,"relay"))
 	{
-		app_data_t data;
+		app_data_t data = {0};
 		device->data = &data;
 		SET_EVENT_FLAG(CONTROL_RELAY_EVENT);
 		device->data->relay = atoi(cJSON_GetObjectItem(dev,"relay")->valuestring);
