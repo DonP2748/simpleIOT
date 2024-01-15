@@ -37,7 +37,6 @@
 //---------------GLOBAL------------------//
 #define TAG  "MQTT"
 #define EXAMPLE_BROKER_URL "mqtt://broker.hivemq.com"   // mqtt://broker.hivemq.com  
-#define BKAVIOT_BROKER_URL "mqtt://172.28.165.41"
 #define TOPIC_LENGTH_MAX  64
 char *device_topic_recv = NULL;
 char *device_topic_tran = NULL;
