@@ -70,11 +70,12 @@ void create_json_msg(void)
 }
 void relese_json_msg(void)
 {    
-	if(attribute_json != NULL)
-	{
-    	cJSON_Delete(attribute_json);
+	if(attribute_json != NULL){
+		cJSON_Delete(attribute_json);
 	}
+	if(element_json != NULL){
     cJSON_Delete(element_json);
+	}
     cJSON_Delete(object_json);
     cJSON_Delete(device_json);
 
