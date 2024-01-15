@@ -69,16 +69,17 @@ void create_json_msg(void)
 	//ESP_LOGI(TAG,"Create new json messenger!");
 }
 void relese_json_msg(void)
-{    
+{   
 	if(attribute_json != NULL){
 		cJSON_Delete(attribute_json);
 	}
 	if(element_json != NULL){
-    cJSON_Delete(element_json);
+    	cJSON_Delete(element_json);
 	}
-    cJSON_Delete(object_json);
+    if(object_json != NULL){
+    	cJSON_Delete(object_json);
+    }
     cJSON_Delete(device_json);
-
 }
 
 char* get_json_msg(void)
@@ -160,7 +161,7 @@ static void parsing_data_receive_json(char* data)
 
 		if(cJSON_HasObjectItem(object,"value"))
 		{
-			sched.value = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
+			sched.value = atoi(cJSON_GetObjectItem(object,"value")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"state"))
 		{
@@ -246,6 +247,7 @@ static void parsing_data_receive_json(char* data)
 	if(cJSON_HasObjectItem(dev,"device_info"))
 	{
 		SET_EVENT_FLAG(DEVICE_INFO_EVENT);
+		process_data_json_callback(DEVICE_INFO_EVENT,NULL);
 	}
 	if(cJSON_HasObjectItem(dev,"relay"))
 	{
@@ -256,6 +258,7 @@ static void parsing_data_receive_json(char* data)
 	}
 	// if(cJSON_HasObjectItem(dev,"sensor"))
 	// {
+	// 	SET_EVENT_FLAG(SENSOR_DATA_EVENT);
 	// }
 	cJSON_Delete(dev);
 }
@@ -266,32 +269,26 @@ static void parsing_data_receive_json(char* data)
 static void create_schedule_object(schedule_t* sched)
 {
 	object_json = cJSON_AddObjectToObject(device_json,"schedule");
-	char buffer[5] = {0};
+	char buffer[10] = {0};
 
     sprintf(buffer,"%d",sched->dow);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "dow",element_json);
-
 	sprintf(buffer,"%d",sched->hour);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "hour",element_json);
-
 	sprintf(buffer,"%d",sched->minute);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "minute",element_json);
-
 	sprintf(buffer,"%d",sched->value);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "value",element_json);
-
 	sprintf(buffer,"%d",sched->state);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "state",element_json);
-
 	sprintf(buffer,"%d",sched->repeat);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "repeat",element_json);
-
 	sprintf(buffer,"%d",sched->relay);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "relay",element_json);
@@ -300,26 +297,20 @@ static void create_schedule_object(schedule_t* sched)
 static void create_alarm_object(alarm_t* alarm)
 {
 	object_json = cJSON_AddObjectToObject(device_json, "alarm");
-	char buffer[6] = {0};
-
-	cJSON_AddItemToObject(object_json, "data",element_json);
-
-	sprintf(buffer,"%02d",alarm->data->temp);
+	char buffer[10] = {0};
+	element_json = cJSON_AddObjectToObject(object_json, "data");
+	sprintf(buffer,"%d",alarm->data->temp);
 	attribute_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(element_json, "temp",attribute_json);
-
-    sprintf(buffer,"%02d",alarm->data->humi);
+    sprintf(buffer,"%d",alarm->data->humi);
 	attribute_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(element_json, "humi",attribute_json);
-
 	sprintf(buffer,"%d",alarm->state);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "state",element_json);
-
     sprintf(buffer,"%d",alarm->status);
     element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "status",element_json);
-
 }
 
 // static void create_reset_factory_object(void)

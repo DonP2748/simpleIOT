@@ -92,7 +92,7 @@ void process_alarm(void* arg)
 	while(1)
 	{
 		alarm_check_threshold();
-		SET_EVENT_FLAG(SENSOR_DATA_EVENT);
+//		SET_EVENT_FLAG(SENSOR_DATA_EVENT);
 		vTaskDelay(ALARM_INTERVAL/portTICK_RATE_MS);
 	}
 	vTaskDelete(NULL);
@@ -116,8 +116,8 @@ void process_send_response(void* arg)
 		if((IS_EVENT_COME)&&(is_wifi_connected()))
 		{	
 			bool type = (is_internet_connected()) ? MQTT_PROTOCOL : TCP4_PROCOTOL;
-			char* data = build_sending_msg();
-			send_data(type,data);
+			char* data = build_sending_msg();	
+			send_data(type,data);	
 			clear_sending_msg();
 		}
 		vTaskDelay(RESPS_INTERVAL/portTICK_RATE_MS);
@@ -143,7 +143,7 @@ void process_control_power(void* arg)
 		float setpoint = (float)device->sched->value;
 		PIDController_Update(pid,setpoint,dht->ftemp,false); 
 //		ESP_LOGI(TAG,"PID OUT SIGNAL : %d",(int)pid->out);
-		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)dht->ftemp,(int)dht->fhumi,(int)setpoint);
+//		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)dht->ftemp,(int)dht->fhumi,(int)setpoint);
 
 		//example for pid, need specific algorithms for each specific case
 		//assuming that default threshold need 50% to maintain
@@ -165,11 +165,10 @@ static char* build_sending_msg(void)
 		if(CHECK_EVENT_FLAG(i))
 		{
 			create_object_json(i,device);
-			CLEAR_EVENT_FLAG(i);
+			CLEAR_EVENT_FLAG(i);			
 		}
 	}
 	return get_json_msg();
-
 }
 
 static void clear_sending_msg(void)
@@ -233,8 +232,8 @@ static void button_decrease_handler(void)
 static void schedule_event_handler(schedule_t* arg)
 {
 	//do something... example
-	//schedule_t *sched = arg;
-	//schedule_create(sched);
+	schedule_t *sched = arg;
+	schedule_create(sched);
 	//should call schedule_remove() somewhere
 }
 
@@ -309,14 +308,14 @@ static void relay_event_handler(bool data)
 
 static void send_data (uint8_t protocol, char* data)
 {
-	if(protocol == MQTT_PROTOCOL)
-	{
-		mqtt_publish_data_on_topic(NULL,data);
-	}
-	else if(protocol == TCP4_PROCOTOL)
-	{
-	 	tcp_server_push_notify(data); 
-	}
+	// if(protocol == MQTT_PROTOCOL)
+	// {
+	// 	mqtt_publish_data_on_topic(NULL,data);
+	// }
+	// else if(protocol == TCP4_PROCOTOL)
+	// {
+	  	tcp_server_push_notify(data); 
+	// }
 }
 
 

@@ -114,7 +114,7 @@ void schedule_check_times_up(int warning)
 	sched_next = get_next_schedule(time_update->tm_wday);
 	//check null
 	if(sched_next == NULL){	return; }
-
+printf("TAI SAO KHONG WORK x2\n");
 	if((time_update->tm_wday == sched_next->dow)&&\
 	(SCHED_TIME(sched_next->hour,sched_next->minute) == SCHED_TIME(time_update->tm_hour,time_update->tm_min)))
 	{
@@ -122,6 +122,7 @@ void schedule_check_times_up(int warning)
 		{
 			//move data to sched_now
 			move_data_schedule(sched_next);
+printf("TAI SAO KHONG WORK x3\n");
 			checked = true;
 		}
 	}
@@ -183,11 +184,10 @@ static schedule_t *get_next_schedule(uint8_t dow)
 
 	struct tm* time_update = get_datetime();
 	if(time_update == NULL){ return NULL; }
-
 	for(index = 0; index < MAX_SCHEDULE; index++)
 	{ 
 		if((lc_sched[index] != NULL)&&(lc_sched[index]->state == true)&&(lc_sched[index]->dow == dow))
-		{
+		{printf("CO VAO DAY TIM THAY SCHEDUE k vay\n");
 			uint16_t tmp =  SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) - \
 							SCHED_TIME(time_update->tm_hour,time_update->tm_min);
 			if((tmp > 0)&&(tmp < diff))
@@ -197,7 +197,7 @@ static schedule_t *get_next_schedule(uint8_t dow)
 			}
 		}
 	}
-	if(diff != 2359){ return lc_sched[location]; }
+	if(diff != 2359){ printf("CO VAO DAY NEXT SCHEDUE INFO k vay\n"); return lc_sched[location]; }
 	else{ return NULL; }
 }
 
@@ -215,7 +215,7 @@ static void move_data_schedule(schedule_t *sched)
 	//Turn off if not repeat
 	if(!sched->repeat)
 	{
-		sched->repeat = false;
+		sched->state = false;
 	}
 } 
 

@@ -61,7 +61,6 @@ void get_network_info(int* rssi,char* mac,char* ssid, uint32_t* ip)
 	wifi_ap_record_t ap;
 	esp_wifi_sta_get_ap_info(&ap);
 	*rssi = ap.rssi;
-	// printf("%d\n", ap.rssi);
 	// mac
     esp_base_mac_addr_get((uint8_t*)mac);
     // ssid
@@ -73,7 +72,6 @@ void get_network_info(int* rssi,char* mac,char* ssid, uint32_t* ip)
 	tcpip_adapter_ip_info_t ipInfo;
 	tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
 	*ip = ipInfo.ip.addr;
-
 }
 
 static void wifi_event_callback(int event)
@@ -111,7 +109,7 @@ static void setup_wifi(void* arg)
 static void setup_network(void*arg)
 {
 	ESP_LOGI(TAG,"Set Up Network");
-	mqtt_app_start();
+//	mqtt_app_start();
 	init_sntp_update();
 
 }
