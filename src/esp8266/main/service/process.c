@@ -92,7 +92,7 @@ void process_alarm(void* arg)
 	while(1)
 	{
 		alarm_check_threshold();
-//		SET_EVENT_FLAG(SENSOR_DATA_EVENT);
+		SET_EVENT_FLAG(SENSOR_DATA_EVENT);
 		vTaskDelay(ALARM_INTERVAL/portTICK_RATE_MS);
 	}
 	vTaskDelete(NULL);
@@ -143,7 +143,7 @@ void process_control_power(void* arg)
 		float setpoint = (float)device->sched->value;
 		PIDController_Update(pid,setpoint,dht->ftemp,false); 
 //		ESP_LOGI(TAG,"PID OUT SIGNAL : %d",(int)pid->out);
-//		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)dht->ftemp,(int)dht->fhumi,(int)setpoint);
+		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)dht->ftemp,(int)dht->fhumi,(int)setpoint);
 
 		//example for pid, need specific algorithms for each specific case
 		//assuming that default threshold need 50% to maintain
@@ -308,14 +308,14 @@ static void relay_event_handler(bool data)
 
 static void send_data (uint8_t protocol, char* data)
 {
-	// if(protocol == MQTT_PROTOCOL)
-	// {
-	// 	mqtt_publish_data_on_topic(NULL,data);
-	// }
-	// else if(protocol == TCP4_PROCOTOL)
-	// {
-	  	tcp_server_push_notify(data); 
-	// }
+	if(protocol == MQTT_PROTOCOL)
+	{
+		mqtt_publish_data_on_topic(NULL,data);
+	}
+	else if(protocol == TCP4_PROCOTOL)
+	{
+	 	tcp_server_push_notify(data); 
+	}
 }
 
 

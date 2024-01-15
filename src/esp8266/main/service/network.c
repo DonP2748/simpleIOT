@@ -109,7 +109,7 @@ static void setup_wifi(void* arg)
 static void setup_network(void*arg)
 {
 	ESP_LOGI(TAG,"Set Up Network");
-//	mqtt_app_start();
+	mqtt_app_start();
 	init_sntp_update();
 
 }

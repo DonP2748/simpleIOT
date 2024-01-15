@@ -114,15 +114,14 @@ void schedule_check_times_up(int warning)
 	sched_next = get_next_schedule(time_update->tm_wday);
 	//check null
 	if(sched_next == NULL){	return; }
-printf("TAI SAO KHONG WORK x2\n");
+
 	if((time_update->tm_wday == sched_next->dow)&&\
 	(SCHED_TIME(sched_next->hour,sched_next->minute) == SCHED_TIME(time_update->tm_hour,time_update->tm_min)))
-	{
+	{	
 		if(checked == false)
 		{
 			//move data to sched_now
-			move_data_schedule(sched_next);
-printf("TAI SAO KHONG WORK x3\n");
+			move_data_schedule(sched_next);			
 			checked = true;
 		}
 	}
@@ -183,35 +182,36 @@ static schedule_t *get_next_schedule(uint8_t dow)
 	uint16_t diff = 2359; //23h59'
 
 	struct tm* time_update = get_datetime();
-	if(time_update == NULL){ return NULL; }
+	if(time_update == NULL){ return NULL; } 
+
 	for(index = 0; index < MAX_SCHEDULE; index++)
 	{ 
 		if((lc_sched[index] != NULL)&&(lc_sched[index]->state == true)&&(lc_sched[index]->dow == dow))
-		{printf("CO VAO DAY TIM THAY SCHEDUE k vay\n");
-			uint16_t tmp =  SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) - \
-							SCHED_TIME(time_update->tm_hour,time_update->tm_min);
-			if((tmp > 0)&&(tmp < diff))
+		{
+			int16_t tmp =  SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) - \
+							SCHED_TIME(time_update->tm_hour,time_update->tm_min);						
+			if((tmp >= 0)&&(tmp < diff))
 			{
 				diff = tmp;
 				location = index;
 			}
 		}
 	}
-	if(diff != 2359){ printf("CO VAO DAY NEXT SCHEDUE INFO k vay\n"); return lc_sched[location]; }
-	else{ return NULL; }
+	if(diff != 2359){ return lc_sched[location]; }
+	else{ return NULL; } 
 }
 
 
 
 static void move_data_schedule(schedule_t *sched)
 {
-	sched_now->dow 	= sched->dow;
+	sched_now->dow 		= sched->dow;
 	sched_now->hour 	= sched->hour;
 	sched_now->minute 	= sched->minute;
 	sched_now->value 	= sched->value;
 	sched_now->state 	= sched->state;
 	sched_now->repeat 	= sched->repeat;
-	sched_now->relay 	= sched->relay;
+	sched_now->relay 	= sched->relay;	
 	//Turn off if not repeat
 	if(!sched->repeat)
 	{
