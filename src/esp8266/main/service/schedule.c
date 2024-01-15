@@ -40,25 +40,38 @@
 #define SCHED_TIME(h,m) (uint32_t)(h*100+m)
 
 typedef enum week {Sun, Mon, Tue, Wed, Thur, Fri, Sat} week;
-
 //---------------------------------------//
 //--------------PRIVATE------------------//
 static sensor_t now = {0};
-static date_t calendar = {0};
 static schedule_t *sched_now = NULL;
-static schedule_t *sched_nxt = NULL;
+static schedule_t *sched_next = NULL;
 static schedule_t *lc_sched[MAX_SCHEDULE] = {0};
-static void sort_schedule(void);
-static schedule_t *get_next_schedule(uint8_t arg);
-static char* get_dow(int day);
-static char* get_state(bool state);
+static schedule_t *get_next_schedule(uint8_t dow);
+static void move_data_schedule(schedule_t *sched);
 static const char *TAG = "SCHEDULE";
 //---------------------------------------//
 
 schedule_t* init_schedule (void)
 {
 	init_lcd();
+	sched_now = (schedule_t *)malloc(sizeof(schedule_t));
+	if(sched_now == NULL){ return NULL; }
+	memset(sched_now,0,sizeof(schedule_t));	
+
+	struct tm *time_update = get_datetime();
+	if(time_update != NULL)
+	{
+		sched_now->dow    = time_update->tm_wday;
+		sched_now->hour   = time_update->tm_hour;
+		sched_now->minute = time_update->tm_min;
+	}
+	sched_now->value  = 25;
+	sched_now->state  = true;
+	sched_now->repeat = true;
+	sched_now->relay  = false;
+
 	ESP_LOGI(TAG,"Init Schedule Module!");
+	sched_next = sched_now;
 	return sched_now;
 }
 
@@ -66,18 +79,16 @@ schedule_t* init_schedule (void)
 void schedule_showoff_data(void* arg)
 {
 	static int threshold_tmp = 0;
-	static int state_tmp = 0;
 	char buff[MAXSIZE_LCD] = {0};
-	char* dow = get_dow(calendar.dow);
 	if(arg)
 	{
 		home();
 		clear();
 	}
-	if((threshold_tmp != sched_now->value)|(state_tmp != sched_now->state))
+	if(threshold_tmp != sched_now->value)
 	{
 		setCursor(0,0);
-		sprintf(buff,"THRESHOLD:%02d %s",sched_now->value,get_state(sched_now->state));
+		sprintf(buff,"THRESHOLD:%02d",sched_now->value);
 		printstr(buff);
 	}
 
@@ -87,7 +98,7 @@ void schedule_showoff_data(void* arg)
 		now.temp = data->temp;
 		now.humi = data->humi;
 		sprintf(buff,"T:%02d H:%02d",data->temp,data->humi);
-		printf("%s\n",buff );
+		//printf("%s\n",buff );
 		setCursor(0,1);
 		printstr(buff);
 	}
@@ -98,17 +109,19 @@ void schedule_check_times_up(int warning)
 {
 	bool checked = false;
 	struct tm* time_update = get_datetime();
-	if(time_update == NULL) 
-	{
-		return;
-	}
-	if((time_update->tm_wday == sched_nxt->dow)&&\
-	(SCHED_TIME(sched_nxt->hour,sched_nxt->minute) == SCHED_TIME(time_update->tm_hour,time_update->tm_min)))
+	if(time_update == NULL){ return; }
+	//get next sched here
+	sched_next = get_next_schedule(time_update->tm_wday);
+	//check null
+	if(sched_next == NULL){	return; }
+
+	if((time_update->tm_wday == sched_next->dow)&&\
+	(SCHED_TIME(sched_next->hour,sched_next->minute) == SCHED_TIME(time_update->tm_hour,time_update->tm_min)))
 	{
 		if(checked == false)
 		{
-			sched_now = sched_nxt;
-			sched_nxt = get_next_schedule(sched_now->index);
+			//move data to sched_now
+			move_data_schedule(sched_next);
 			checked = true;
 		}
 	}
@@ -123,8 +136,8 @@ void schedule_create(schedule_t *sched)
 {
 	int index;
 	for(index = 0; index < MAX_SCHEDULE; index++)
-	{
-		if((lc_sched[index]->dow == sched->dow)&&\
+	{	//check schedule existed
+		if((lc_sched[index] != NULL)&&(lc_sched[index]->dow == sched->dow)&&\
 		(SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) == SCHED_TIME(sched->hour,sched->minute)))
 		{
 			free(lc_sched[index]); 	//unique
@@ -132,13 +145,9 @@ void schedule_create(schedule_t *sched)
 		if(lc_sched[index] == NULL)
 		{
 			lc_sched[index] = (schedule_t*)malloc(sizeof(schedule_t));
-			if(!lc_sched[index])
-			{	
-				return;	
-			}
+			if(!lc_sched[index]){ return; }
 			memset(lc_sched[index],0,sizeof(schedule_t));
 
-			lc_sched[index]->index = index;
 			lc_sched[index]->dow = sched->dow;
 			lc_sched[index]->hour = sched->hour;
 			lc_sched[index]->minute = sched->minute;
@@ -146,11 +155,9 @@ void schedule_create(schedule_t *sched)
 			lc_sched[index]->state = sched->state;
 			lc_sched[index]->repeat = sched->repeat;
 			lc_sched[index]->relay = sched->relay;
-			break;
+			return;
 		}
 	}
-	//sort here
-	sort_schedule();
 }
 
 void schedule_delete(schedule_t *sched)
@@ -168,84 +175,49 @@ void schedule_delete(schedule_t *sched)
 }
 
 
-static void sort_schedule(void)
+static schedule_t *get_next_schedule(uint8_t dow)
 {
-	int i,j;
-	bool wrapped;
-	//bubble sort
-	for(i = 0; i < MAX_SCHEDULE-1; i++)
-	{
-		for(j = 0;j < MAX_SCHEDULE-i-1;j++)
+	uint8_t index;
+	uint8_t location = 0; 
+	uint16_t diff = 2359; //23h59'
+
+	struct tm* time_update = get_datetime();
+	if(time_update == NULL){ return NULL; }
+
+	for(index = 0; index < MAX_SCHEDULE; index++)
+	{ 
+		if((lc_sched[index] != NULL)&&(lc_sched[index]->state == true)&&(lc_sched[index]->dow == dow))
 		{
-			if((lc_sched[j] != NULL)&&((lc_sched[j]->dow > lc_sched[j+1]->dow)||((lc_sched[j]->dow == lc_sched[j+1]->dow)&\
-			(SCHED_TIME(lc_sched[j]->hour,lc_sched[j]->minute) > SCHED_TIME(lc_sched[j+1]->hour,lc_sched[j+1]->minute)))))
+			uint16_t tmp =  SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) - \
+							SCHED_TIME(time_update->tm_hour,time_update->tm_min);
+			if((tmp > 0)&&(tmp < diff))
 			{
-				int temp = lc_sched[j]->index;
-				lc_sched[j]->index = lc_sched[j+1]->index;
-				lc_sched[j+1]->index = temp;
-				wrapped = true;
+				diff = tmp;
+				location = index;
 			}
 		}
-		if(wrapped == false)
-		{
-			break;
-		}
 	}
+	if(diff != 2359){ return lc_sched[location]; }
+	else{ return NULL; }
 }
 
-static schedule_t *get_next_schedule(uint8_t arg)
-{
-	int i;
-	int index = arg;
-	if(index == MAX_SCHEDULE-1)
-	{
-		index = 0;
-	}
-	else 
-	{
-		index += 1;
-	}
-	for(i = 0; i < MAX_SCHEDULE; i++)
-	{
-		if((lc_sched[i] != NULL)&&(lc_sched[i]->index == index))
-		{
-			return lc_sched[i];
-		}
-	}
-	return NULL;
-}
 
-static char* get_dow(int day)
-{
-	switch(day)
-	{
-		case Mon:
-			return "Mon";
-		case Tue:
-			return "Tue";
-		case Wed:
-			return "Wed";
-		case Thur:
-			return "Thur";
-		case Fri:
-			return "Fri";
-		case Sat:
-			return "Sat";
-		case Sun:
-			return "Sun";
-		default:
-			return NULL;
-			break;
-	}
-}
 
-static char* get_state(bool state)
+static void move_data_schedule(schedule_t *sched)
 {
-	if(state)
-		return "ON";
-	else 
-		return "OFF"; 
-}
+	sched_now->dow 	= sched->dow;
+	sched_now->hour 	= sched->hour;
+	sched_now->minute 	= sched->minute;
+	sched_now->value 	= sched->value;
+	sched_now->state 	= sched->state;
+	sched_now->repeat 	= sched->repeat;
+	sched_now->relay 	= sched->relay;
+	//Turn off if not repeat
+	if(!sched->repeat)
+	{
+		sched->repeat = false;
+	}
+} 
 
 
 

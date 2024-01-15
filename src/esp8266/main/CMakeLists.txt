@@ -5,6 +5,7 @@ set(COMPONENT_SRCS
 	"driver/io.c"
 	"driver/sig_pwm.c"
 	"driver/sensor.c"
+	"service/pid.c"
 	"service/alarm.c"
 	"service/schedule.c"
 	"service/device.c"

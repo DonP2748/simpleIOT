@@ -35,8 +35,10 @@
 #include "tcp/tcp.h"
 #include "wifi/wifi.h"
 #include "nvs_flash.h"
-
+#include "sensor.h"
+#include "pid.h"
 #include "io.h"
+#include "sig_pwm.h"
 #include "alarm.h"
 #include "schedule.h"
 #include "network.h"
@@ -125,6 +127,36 @@ void process_send_response(void* arg)
 	vTaskDelete(NULL);
 }
 
+#define EXAMPLE_MAX_PID_OUT 	(1800*10)
+
+void process_control_power(void* arg)
+{
+	PIDController *pid = PIDController_Create(EXAMPLE_KP,EXAMPLE_KI,EXAMPLE_KD,EXAMPLE_TAU,\
+				EXAMPLE_LIMMIN,EXAMPLE_LIMMAX,EXAMPLE_LIMMININT,EXAMPLE_LIMMAXINT,EXAMPLE_TIM);
+	float temp = 0.0f;
+	float humi = 0.0f;
+	float setpoint = (float)device->sched->value;
+	uint8_t percent = 0;
+
+	sig_pwm_init();
+
+	while(1)
+	{	
+		sensor_read_float_data(&temp,&humi);		
+		PIDController_Update(pid,setpoint,temp,false); 
+//		ESP_LOGI(TAG,"PID OUT SIGNAL : %d",(int)pid->out);
+//		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)temp,(int)humi,(int)setpoint);
+		//example for pid, need specific algorithms for each specific case
+		//assuming that default threshold need 50% to maintain
+		//if temparature is higher then need more power to cool it down and vice versa 
+		percent = (uint8_t)((pid->out)/EXAMPLE_MAX_PID_OUT+ 50); 
+		sig_pwm_set_percent(percent);
+		vTaskDelay(EXAMPLE_TIM/portTICK_RATE_MS);
+	}
+	PIDController_Delete(pid);
+	vTaskDelete(NULL);
+}
+
 static char* build_sending_msg(void)
 {
 	create_json_msg();
@@ -202,7 +234,7 @@ static void button_decrease_handler(void)
 
 static void schedule_event_handler(schedule_t* arg)
 {
-	//do something ...
+	//do something... example
 	schedule_t *sched = arg;
 	schedule_create(sched);
 }
@@ -278,11 +310,11 @@ static void relay_event_handler(bool data)
 
 static void send_data (uint8_t protocol, char* data)
 {
-	if(!protocol)
+	if(protocol == MQTT_PROTOCOL)
 	{
 		mqtt_publish_data_on_topic(NULL,data);
 	}
-	else 
+	else if(protocol == TCP4_PROCOTOL)
 	{
 	 	tcp_server_push_notify(data); 
 	}

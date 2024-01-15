@@ -53,16 +53,24 @@ void sensor_init(void)
 
 esp_err_t sensor_read_data(sensor_t* data)
 {
-    int temp,humi;
+    int16_t temp,humi;
+    //ESP8266 get trouble when prinf, sprintf and ESP_LOGI with float number
     int ret = dht_read_data(DHT_TYPE_DHT11,DHT_PIN,&humi,&temp);
-    data->humi = humi/10;
-    data->temp = temp/10;
+    data->humi = (int)humi/10;
+    data->temp = (int)temp/10;
     return ret;
 }
 
+esp_err_t sensor_read_float_data(float *t, float *h)
+{
+    return dht_read_float_data(DHT_TYPE_DHT11,DHT_PIN,h,t);
+}
+
+
 static esp_err_t dht_init(gpio_num_t pin, bool pull_up) 
 {
-    gpio_config_t io_conf = {
+    gpio_config_t io_conf = 
+    {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT_OD,
         .pin_bit_mask = 1ULL << pin,
@@ -70,7 +78,8 @@ static esp_err_t dht_init(gpio_num_t pin, bool pull_up)
         .pull_up_en = pull_up ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE
     };
     esp_err_t result = gpio_config(&io_conf);
-    if (result == ESP_OK) {
+    if (result == ESP_OK) 
+    {
         gpio_set_level(pin, 1);
         return ESP_OK;
     }

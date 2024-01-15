@@ -32,7 +32,7 @@ typedef struct sensor_t
 //--------------DECLARE------------------//
 void sensor_init(void);
 esp_err_t sensor_read_data(sensor_t* data);
-
+esp_err_t sensor_read_float_data(float *t, float *h);
 
 
 

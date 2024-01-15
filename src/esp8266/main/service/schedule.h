@@ -32,7 +32,6 @@ typedef struct schedule_t
 	uint8_t hour;
 	uint8_t minute;
 	uint8_t value;
-	uint8_t index;
 	bool state;
 	bool repeat;
 	bool relay;

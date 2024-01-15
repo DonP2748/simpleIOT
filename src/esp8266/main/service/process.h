@@ -21,5 +21,6 @@ void init_device_process(void);
 void process_alarm(void* arg);
 void process_schedule(void* arg);
 void process_send_response(void* arg);
+void process_control_power(void* arg);
 //---------------------------------------//
 #endif//_PROCESS_H_

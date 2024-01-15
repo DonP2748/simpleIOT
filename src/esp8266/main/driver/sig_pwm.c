@@ -52,8 +52,9 @@ bool sig_pwm_init(void)
 
 void sig_pwm_set_percent(uint8_t arg)
 {
-	uint8_t val = (arg > 100) ? 100 : ((arg < 0) ? 0 : arg);
+	uint8_t val = (arg > 100) ? (100) : (arg);
 	duty = val*(PWM_PERIOD/100);
+	ESP_LOGI(TAG,"POWER SIGNAL OUTPUT: %d",val);
 	pwm_set_duty(CHANNEL_NUMB,duty);
     pwm_start();
 }
