@@ -165,18 +165,26 @@ void schedule_create(schedule_t *sched)
 }
 
 void schedule_delete(schedule_t *sched)
-{
+{	
+	erase_spi_flash_items("schedule"); //erase flash
 	int index;
 	for(index = 0; index < MAX_SCHEDULE; index++)
 	{
-		if((lc_sched[index] != NULL)&&(lc_sched[index]->dow == sched->dow)&&\
-		(SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) == SCHED_TIME(sched->hour,sched->minute)))
-		{
-			free(lc_sched[index]);
-			return;
+		if(lc_sched[index] != NULL){ //check all schedule existed
+			if((lc_sched[index]->dow == sched->dow)&&\
+			(SCHED_TIME(lc_sched[index]->hour,lc_sched[index]->minute) == SCHED_TIME(sched->hour,sched->minute)))
+			{
+				free(lc_sched[index]);  //delete this one
+			}	
+			else{ //save others
+				save_data_schedule(lc_sched[index]);
+			}
 		}
 	}
 }
+	
+	
+
 
 
 static schedule_t *get_next_schedule(uint8_t dow)

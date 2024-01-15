@@ -61,7 +61,7 @@ static device_info_t* init_device_info(void)
 	if(!lc_device_info) return NULL;
 	memset(lc_device_info,0,sizeof(device_info_t));
 
-	lc_device_info->id = 76543210;
+	lc_device_info->id = 01234567;
 	lc_device_info->hard_ver = 1;
 	lc_device_info->soft_ver = 1;
 	//lc_device_info->rssi = ;
