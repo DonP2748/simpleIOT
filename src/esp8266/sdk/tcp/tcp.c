@@ -148,7 +148,9 @@ static void tcp_server_task(void *pvParameters)
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
 
                 if(tcp_server_request_handler)
+                {
                     tcp_server_request_handler(rx_buffer);
+                }
             }
         }
 

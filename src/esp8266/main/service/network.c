@@ -100,9 +100,9 @@ static void wifi_event_callback(int event)
 
 static void setup_wifi(void* arg)
 {
-	ESP_LOGI(TAG,"Set Up Wifi");
 	if(!is_wifi_connected())
 	{
+		ESP_LOGI(TAG,"Set Up Wifi");
 		wifi_config_start(NULL);
 	}
 }

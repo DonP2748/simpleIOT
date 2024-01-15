@@ -151,6 +151,7 @@ static void parsing_data_receive_json(char* data)
 		if(cJSON_HasObjectItem(object,"dow"))
 		{
 			device->sched->dow = atoi(cJSON_GetObjectItem(object,"dow")->valuestring);
+			printf("AAAAAAAAAAAAAAA %d",device->sched->dow);
 		}
 		if(cJSON_HasObjectItem(object,"hour"))
 		{
@@ -164,6 +165,7 @@ static void parsing_data_receive_json(char* data)
 		if(cJSON_HasObjectItem(object,"value"))
 		{
 			device->sched->value = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
+			printf("AAAAAAAAAAAAAAA %d",device->sched->value);
 		}
 		if(cJSON_HasObjectItem(object,"state"))
 		{

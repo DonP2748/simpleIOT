@@ -36,12 +36,12 @@ static const char *TAG = "MAIN";
 void app_main()
 {
     nvs_flash_init();
-//    init_device_process();
+    init_device_process();
     init_network_process();
     ESP_LOGI(TAG,"HELLO EMBEDDED WORLD!");
-//    xTaskCreate(process_alarm, "process_alarm", 2048, NULL, 3, NULL);
-//    xTaskCreate(process_schedule, "process_schedule", 2048, NULL, 3, NULL);
-//    xTaskCreate(process_send_response, "process_send_response", 2048, NULL, 3, NULL);
-//    xTaskCreate(process_control_power, "process_control_power", 2048, NULL, 3, NULL);
+    xTaskCreate(process_alarm, "process_alarm", 2048, NULL, 3, NULL);
+    xTaskCreate(process_schedule, "process_schedule", 2048, NULL, 3, NULL);
+    xTaskCreate(process_send_response, "process_send_response", 2048, NULL, 3, NULL);
+    xTaskCreate(process_control_power, "process_control_power", 2048, NULL, 3, NULL);
 }
 

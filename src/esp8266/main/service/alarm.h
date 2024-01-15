@@ -17,7 +17,7 @@
 //---------------MACRO-------------------//
 typedef struct alarm_t
 {
-	sensor_t* data;
+	sensor_t *data;
 	bool state;
 	bool status;
 } alarm_t;
@@ -26,7 +26,6 @@ typedef struct alarm_t
 //--------------DECLARE------------------//
 alarm_t* init_alarm(void);
 void alarm_check_threshold(void);
-sensor_t* get_sensor_data_device(void);
 void register_alarm_over_threshold_cb(void(*callback)(bool arg));
 //---------------------------------------//
 #endif//_ALARM_H_

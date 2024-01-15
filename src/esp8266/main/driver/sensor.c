@@ -36,13 +36,14 @@ typedef enum
 //---------------------------------------//
 
 //--------------PRIVATE------------------//
-static const char *TAG = "SENSOR";
+static sensor_t dht = {0};
+static esp_err_t dht_init(gpio_num_t pin, bool pull_up);
 static bool dht_await_pin_state(uint8_t pin, uint32_t timeout, bool expected_pin_state, uint32_t *duration);
-
-static esp_err_t dht_init(gpio_num_t pin, bool pull_up); 
+static inline bool dht_fetch_data(dht_sensor_type_t sensor_type, uint8_t pin, bool bits[DHT_DATA_BITS]);
+static inline int16_t dht_convert_data(dht_sensor_type_t sensor_type, uint8_t msb, uint8_t lsb);
 static esp_err_t dht_read_data(dht_sensor_type_t sensor_type, gpio_num_t pin, int16_t *humidity, int16_t *temperature);
-static esp_err_t dht_read_float_data(dht_sensor_type_t sensor_type, gpio_num_t pin, float *humidity, float *temperature);
 
+static const char *TAG = "SENSOR";
 //---------------------------------------//
 
 
@@ -51,6 +52,12 @@ void sensor_init(void)
     dht_init(DHT_PIN,1);
 }
 
+sensor_t *get_sensor_data_device(void)
+{
+    return &dht;
+}
+
+
 esp_err_t sensor_read_data(sensor_t* data)
 {
     int16_t temp,humi;
@@ -58,13 +65,11 @@ esp_err_t sensor_read_data(sensor_t* data)
     int ret = dht_read_data(DHT_TYPE_DHT11,DHT_PIN,&humi,&temp);
     data->humi = (int)humi/10;
     data->temp = (int)temp/10;
+    data->fhumi = (float)temp / 10; 
+    data->ftemp = (float)humi / 10;
     return ret;
 }
 
-esp_err_t sensor_read_float_data(float *t, float *h)
-{
-    return dht_read_float_data(DHT_TYPE_DHT11,DHT_PIN,h,t);
-}
 
 
 static esp_err_t dht_init(gpio_num_t pin, bool pull_up) 
@@ -204,22 +209,9 @@ static esp_err_t dht_read_data(dht_sensor_type_t sensor_type, gpio_num_t pin, in
     *humidity = dht_convert_data(sensor_type, data[0], data[1]);
     *temperature = dht_convert_data(sensor_type, data[2], data[3]);
 
-    ESP_LOGI(TAG,"Sensor data: humidity=%d, temp=%d\n", *humidity, *temperature);
+    //ESP_LOGI(TAG,"Sensor data: humidity=%d, temp=%d\n", *humidity, *temperature);
 
     return ESP_OK;
 }
 
-static esp_err_t dht_read_float_data(dht_sensor_type_t sensor_type, gpio_num_t pin, float *humidity, float *temperature)
-{
-    int16_t i_humidity, i_temp;
-
-    if (dht_read_data(sensor_type, pin, &i_humidity, &i_temp) == ESP_OK) 
-    {
-        *humidity = (float)i_humidity / 10; 
-        *temperature = (float)i_temp / 10;
-        //ESP_LOGI(TAG,"Sensor data: humidity=%.2f, temp=%.2f\n",*humidity,*temperature); 
-        return ESP_OK;
-    }
-    return ESP_FAIL;
-}
 

@@ -33,7 +33,6 @@
 //---------------------------------------//
 
 //--------------PRIVATE------------------//
-static sensor_t dht = {0};
 static sensor_t threshold = {0};
 static alarm_t lc_alarm = {0};
 static uint8_t overheat_cnt = 0;
@@ -49,19 +48,13 @@ alarm_t *init_alarm(void)
 	return &lc_alarm;
 }
 
-sensor_t *get_sensor_data_device(void)
-{
-	return &dht;
-}
-
 
 void alarm_check_threshold(void)
 {
-	if(sensor_read_data(&dht) != ESP_OK)
-		return;
+	sensor_t *dht = get_sensor_data_device();
 	if(lc_alarm.state)
 	{
-		if((dht.temp >= lc_alarm.data->temp)|(dht.humi >= lc_alarm.data->humi))
+		if((dht->temp >= lc_alarm.data->temp)|(dht->humi >= lc_alarm.data->humi))
 		{
 			if(overheat_cnt < MAX_OVERHEAT_COUNT)
 			{

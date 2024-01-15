@@ -26,13 +26,16 @@ typedef struct sensor_t
 {
 	int temp;
 	int humi;
+	float ftemp;
+	float fhumi;
 } sensor_t;
 //---------------------------------------//
 
 //--------------DECLARE------------------//
 void sensor_init(void);
+//For Read Only if without sensor_read_data()
+sensor_t *get_sensor_data_device(void); 
 esp_err_t sensor_read_data(sensor_t* data);
-esp_err_t sensor_read_float_data(float *t, float *h);
 
 
 

@@ -131,8 +131,8 @@ void process_control_power(void* arg)
 {
 	PIDController *pid = PIDController_Create(EXAMPLE_KP,EXAMPLE_KI,EXAMPLE_KD,EXAMPLE_TAU,\
 				EXAMPLE_LIMMIN,EXAMPLE_LIMMAX,EXAMPLE_LIMMININT,EXAMPLE_LIMMAXINT,EXAMPLE_TIM);
-	float temp = 0.0f;
-	float humi = 0.0f;
+
+	sensor_t *dht = get_sensor_data_device();
 	float setpoint = (float)device->sched->value;
 	uint8_t percent = 0;
 
@@ -140,14 +140,16 @@ void process_control_power(void* arg)
 
 	while(1)
 	{	
-		sensor_read_float_data(&temp,&humi);		
-		PIDController_Update(pid,setpoint,temp,false); 
+		sensor_read_data(dht);		
+		PIDController_Update(pid,setpoint,dht->ftemp,false); 
 //		ESP_LOGI(TAG,"PID OUT SIGNAL : %d",(int)pid->out);
-		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)temp,(int)humi,(int)setpoint);
-		//example for pid, need specific algorithms for each specific case
-		//assuming that default threshold need 50% to maintain
-		//if temparature is higher then need more power to cool it down and vice versa 
-		percent = (uint8_t)((pid->out)/EXAMPLE_MAX_PID_OUT+ 50); 
+		ESP_LOGI(TAG,"TEMP: %d HUMI: %d SETPOINT: %d",(int)dht->ftemp,(int)dht->fhumi,(int)setpoint);
+
+		/*example for pid, need specific algorithms for each specific case
+		assuming that default threshold need 50% to maintain
+		if temparature is higher then need more power to cool it down and vice versa*/
+
+		percent = (uint8_t)((pid->out)/EXAMPLE_MAX_PID_OUT + 50); 
 		sig_pwm_set_percent(percent);
 		vTaskDelay(EXAMPLE_TIM/portTICK_RATE_MS);
 	}
@@ -222,11 +224,13 @@ static void process_data_recv_callback(void* data)
 
 static void button_increase_handler(void)
 {
+	ESP_LOGI(TAG,"HELLO AAAAAAAAAAAAAAAAAA");
 	device->sched->value++;
 }
 
 static void button_decrease_handler(void)
 {
+	ESP_LOGI(TAG,"HELLO BBBBBBBBBBBBBBB");
 	device->sched->value--; 
 }
 
