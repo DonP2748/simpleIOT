@@ -17,8 +17,8 @@
 //---------------------------------------//
 
 //--------------DECLARE------------------//
-bool read_spi_flash_items (char* item, char* data, uint32_t len);
-bool write_spi_flash_items (char* item, char* data);
+bool write_spi_flash_items (char* item, char* data, uint32_t len);
+uint32_t read_spi_flash_items (char* item, char* data, uint32_t len);
 bool erase_spi_flash_items (char* item);
 void spi_flash_mount(void); 
 void spi_flash_unmount(void); 

@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////////////////
 // All rights reserved. This program and the accompanying materials	//
-// are made available under the terms of the Public License v1.0		//
+// are made available under the terms of the Public License v1.0	//
 // and Distribution License v1.0 which accompany this distribution.	//
-// MODULE  	:	flash.c																								//
-// AUTHOR 	: 	DonP 																								//
-// DATE   	: 	--/--/----																					//
+// MODULE  	:	flash.c												//
+// AUTHOR 	: 	DonP 												//
+// DATE   	: 	--/--/----											//
 //////////////////////////////////////////////////////////////////////
 
 
@@ -30,7 +30,7 @@
 
   
 
-bool write_spi_flash_items (char* item, char* data)
+bool write_spi_flash_items (char* item, char* data, uint32_t len)
 {
 	char* FileName = item;
 	char* FilePath = (char*)malloc((strlen("/spiffs/") + strlen(FileName) + strlen(".txt"))*sizeof(char));
@@ -45,13 +45,14 @@ bool write_spi_flash_items (char* item, char* data)
   	     ESP_LOGE(TAG, "SPIFFS OPEN FAIL to write");
   	     return 0;
     } 
-  	fprintf(lf,"%s\n",data);
+    fseek (lf, 0, SEEK_END);
+  	fwrite(data,sizeof(char),len,lf);
 	fclose(lf);
     free(FilePath);
 	return 1;
 }
 
-bool read_spi_flash_items (char* item, char* data, uint32_t len)
+uint32_t read_spi_flash_items (char* item, char* data, uint32_t len)
 {
     char* FileName = item;
     char* FilePath = (char*)malloc((strlen("/spiffs/") + strlen(FileName) + strlen(".txt"))*sizeof(char));
@@ -66,10 +67,14 @@ bool read_spi_flash_items (char* item, char* data, uint32_t len)
         ESP_LOGE(TAG, "SPIFFS OPEN FAIL to read");
         return 0; 
     }
-    fgets(data,len,lf);
+    rewind (lf);
+    fread(data,sizeof(char),len,lf);
+
+    fseek (lf, 0, SEEK_END); // Move the file pointer to the end of the file
+    uint32_t fsize = ftell(lf);
     fclose(lf);
     free(FilePath);
-	return 1;
+	return fsize;
 }
 
 

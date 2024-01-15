@@ -98,7 +98,7 @@ bool aes_save_keys(void)
 	memcpy(sf->aes_key, aes_key, AES_KEY_LENGTH);	
 	memcpy(sf->mac_key, mac_key, HMAC_KEY_LENGTH);
 	spi_flash_mount();
-	if (!write_spi_flash_items("security",(char*)sf)) 
+	if (!write_spi_flash_items("security",(char*)sf,sizeof(sys_flash_t))) 
 	{	
 		goto error;
 	}

@@ -24,7 +24,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-
+#include "flash.h"
 #include "lcd.h"
 #include "sensor.h"
 #include "alarm.h"
@@ -40,6 +40,7 @@
 #define SCHED_TIME(h,m) (uint32_t)(h*100+m)
 
 typedef enum week {Sun, Mon, Tue, Wed, Thur, Fri, Sat} week;
+
 //---------------------------------------//
 //--------------PRIVATE------------------//
 static sensor_t now = {0};
@@ -48,6 +49,8 @@ static schedule_t *sched_next = NULL;
 static schedule_t *lc_sched[MAX_SCHEDULE] = {0};
 static schedule_t *get_next_schedule(uint8_t dow);
 static void move_data_schedule(schedule_t *sched);
+static void save_data_schedule(schedule_t *sched);
+static void load_data_schedule(void);
 static const char *TAG = "SCHEDULE";
 //---------------------------------------//
 
@@ -69,7 +72,7 @@ schedule_t* init_schedule (void)
 	sched_now->state  = true;
 	sched_now->repeat = true;
 	sched_now->relay  = false;
-
+	load_data_schedule();
 	ESP_LOGI(TAG,"Init Schedule Module!");
 	sched_next = sched_now;
 	return sched_now;
@@ -155,6 +158,7 @@ void schedule_create(schedule_t *sched)
 			lc_sched[index]->state = sched->state;
 			lc_sched[index]->repeat = sched->repeat;
 			lc_sched[index]->relay = sched->relay;
+			save_data_schedule(lc_sched[index]);
 			return;
 		}
 	}
@@ -219,5 +223,59 @@ static void move_data_schedule(schedule_t *sched)
 	}
 } 
 
+static void save_data_schedule(schedule_t *sched)
+{
+	char* buff = (char*)malloc(sizeof(schedule_t));
+	if(buff == NULL){return;}
 
+	spi_flash_mount();
 
+	memset(buff,sched->dow,sizeof(sched->dow));
+	memset(buff,sched->hour,sizeof(sched->hour));
+	memset(buff,sched->minute,sizeof(sched->minute));
+	memset(buff,sched->value,sizeof(sched->value));
+	memset(buff,sched->state,sizeof(sched->state));
+	memset(buff,sched->repeat,sizeof(sched->repeat));
+	memset(buff,sched->relay,sizeof(sched->relay));
+
+	write_spi_flash_items("schedule",buff,sizeof(buff));
+	spi_flash_unmount();
+	free(buff);
+}
+
+static void load_data_schedule(void)
+{
+	char* buff = (char*)malloc(sizeof(schedule_t)*MAX_SCHEDULE);
+	if(buff == NULL){return;}
+
+	spi_flash_mount();
+
+	uint32_t data_size = read_spi_flash_items("schedule",buff,sizeof(buff));
+
+	int index, offset = 0;
+	for(index = 0; index < MAX_SCHEDULE; index++)
+	{ 
+		if((lc_sched[index] == NULL))
+		{	
+			if(offset < data_size){
+				//create schedule
+				lc_sched[index] = (schedule_t*)malloc(sizeof(schedule_t));
+				if(!lc_sched[index]){ return; }
+				memset(lc_sched[index],0,sizeof(schedule_t));
+
+				lc_sched[index]->dow 	= ((schedule_t*)(buff + offset))->dow;
+				lc_sched[index]->hour 	= ((schedule_t*)(buff + offset))->hour;
+				lc_sched[index]->minute = ((schedule_t*)(buff + offset))->minute;
+				lc_sched[index]->value 	= ((schedule_t*)(buff + offset))->value;
+				lc_sched[index]->state  = ((schedule_t*)(buff + offset))->state;
+				lc_sched[index]->repeat = ((schedule_t*)(buff + offset))->repeat; 
+				lc_sched[index]->relay 	= ((schedule_t*)(buff + offset))->relay;
+
+				offset += sizeof(schedule_t);
+			}
+			else { break;}
+		}
+	}
+	spi_flash_unmount();
+	free(buff);
+}
