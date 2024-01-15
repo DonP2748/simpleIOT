@@ -142,7 +142,7 @@ static void IRAM_ATTR increase_button_isr_handler(void* arg)
 {
 	
     // notify the button task
-
+	// Do not call ESP_LOGI in there, and in callback too! It will be crashed
 	if(!debounce_increase_btn)
 	{
 		debounce_increase_btn = true;
