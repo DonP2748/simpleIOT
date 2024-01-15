@@ -68,7 +68,7 @@ static void device_info_event_handler(void);
 static void update_sensor_event_handler(void);
 static char* build_sending_msg(void);
 static void clear_sending_msg(void);
-static void process_data_recv_callback(void* data);
+static void process_data_recv_callback(uint8_t evt,void* data);
 static void button_increase_handler(void);
 static void button_decrease_handler(void);
 static const char* TAG = "PROCESS";
@@ -178,45 +178,41 @@ static void clear_sending_msg(void)
 }
 
 
-static void process_data_recv_callback(void* data)
+static void process_data_recv_callback(uint8_t evt,void* data)
 {
-	internal_device_t* dev = (internal_device_t*) data;
-	for(int i = 0;i<EVENT_DATA_SUM;i++)
+	if(CHECK_EVENT_FLAG(evt))
 	{
-		if(CHECK_EVENT_FLAG(i))
+		switch(evt)
 		{
-			switch(i)
-			{
-				case SCHEDULE_EVENT:
-					schedule_event_handler(dev->sched);
-					break;
-				case ALARM_EVENT:
-					alarm_event_handler(dev->alarm);
-					break;
-				case RESET_FACTORY_EVENT:
-					reset_factory_event_handler();
-					break;
-				case REBOOT_EVENT:
-					reboot_event_handler();
-					break;
-				case CHANGE_WIFI_EVENT:
-					change_wifi_event_handler(dev->info);
-					break;
-				case OTA_REQUEST_EVENT:
-					ota_event_handler();
-					break;
-				case DEVICE_INFO_EVENT:
-					device_info_event_handler();
-					break;
-				case CONTROL_RELAY_EVENT:
-					relay_event_handler(dev->data->relay);
-					break;
-				case SENSOR_DATA_EVENT:
-					update_sensor_event_handler();
-					break;
-				default:
-					break;
-			}
+			case SCHEDULE_EVENT:
+				schedule_event_handler((schedule_t*)data);
+				break;
+			case ALARM_EVENT:
+				alarm_event_handler((alarm_t*)data);
+				break;
+			case RESET_FACTORY_EVENT:
+				reset_factory_event_handler();
+				break;
+			case REBOOT_EVENT:
+				reboot_event_handler();
+				break;
+			case CHANGE_WIFI_EVENT:
+				change_wifi_event_handler((device_info_t*)data);
+				break;
+			case OTA_REQUEST_EVENT:
+				ota_event_handler();
+				break;
+			case DEVICE_INFO_EVENT:
+				device_info_event_handler();
+				break;
+			case CONTROL_RELAY_EVENT:
+				relay_event_handler(*((bool*)data));
+				break;
+			case SENSOR_DATA_EVENT:
+				update_sensor_event_handler();
+				break;
+			default:
+				break;
 		}
 	}
 }
@@ -237,8 +233,8 @@ static void button_decrease_handler(void)
 static void schedule_event_handler(schedule_t* arg)
 {
 	//do something... example
-	schedule_t *sched = arg;
-	schedule_create(sched);
+	//schedule_t *sched = arg;
+	//schedule_create(sched);
 	//should call schedule_remove() somewhere
 }
 

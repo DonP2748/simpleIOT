@@ -141,7 +141,8 @@ static void tcp_server_task(void *pvParameters)
                 break;
             }
             // Data received
-            else {
+            else 
+            {
 
                 inet_ntoa_r(((struct sockaddr_in *)&sourceAddr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
 

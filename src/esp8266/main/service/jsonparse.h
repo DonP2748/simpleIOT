@@ -23,6 +23,6 @@ void relese_json_msg(void);
 char* get_json_msg(void);
 void create_object_json (uint8_t evt, void* dev);
 //void register_create_msg_json_cb(void(*callback)(void* data));
-void register_process_data_json_cb(void(*callback)(void* data));
+void register_process_data_json_cb(void(*callback)(uint8_t evt,void* data));
 //---------------------------------------//
 #endif//_JSON_PARSE_H_

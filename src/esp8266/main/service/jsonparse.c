@@ -38,7 +38,7 @@ static cJSON* object_json;
 static cJSON* element_json;
 static cJSON* attribute_json;
 static const char *TAG = "JSONPARSE";
-static void (*process_data_json_callback)(void* data) = NULL;
+static void (*process_data_json_callback)(uint8_t evt,void* data) = NULL;
 
 static void parsing_data_receive_json(char* data);
 
@@ -122,7 +122,7 @@ void create_object_json (uint8_t evt, void* dev)
 	}
 }
 
-void register_process_data_json_cb(void(*callback)(void* data))
+void register_process_data_json_cb(void(*callback)(uint8_t evt,void* data))
 {
 	if(callback)
 	{
@@ -137,44 +137,43 @@ static void parsing_data_receive_json(char* data)
 	cJSON *dev = cJSON_Parse(data);
 	cJSON *object; 
 	cJSON *element;
-	device_t *device = (device_t*)malloc(sizeof(device_t));
-	if(!device)	return;
+
 	if(cJSON_HasObjectItem(dev,"schedule"))
 	{
 		schedule_t sched = {0};
-		device->sched = &sched;
 		SET_EVENT_FLAG(SCHEDULE_EVENT);
 		object = cJSON_GetObjectItem(dev,"schedule");
 
 		if(cJSON_HasObjectItem(object,"dow"))
 		{	
-			device->sched->dow = atoi(cJSON_GetObjectItem(object,"dow")->valuestring);
+			sched.dow = atoi(cJSON_GetObjectItem(object,"dow")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"hour"))
 		{
-			device->sched->hour = atoi(cJSON_GetObjectItem(object,"hour")->valuestring);
+			sched.hour = atoi(cJSON_GetObjectItem(object,"hour")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"minute"))
 		{
-			device->sched->minute = atoi(cJSON_GetObjectItem(object,"minute")->valuestring);
+			sched.minute = atoi(cJSON_GetObjectItem(object,"minute")->valuestring);
 		}
 
 		if(cJSON_HasObjectItem(object,"value"))
 		{
-			device->sched->value = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
+			sched.value = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"state"))
 		{
-			device->sched->state = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
+			sched.state = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"repeat"))
 		{
-			device->sched->repeat = atoi(cJSON_GetObjectItem(object,"repeat")->valuestring);
+			sched.repeat = atoi(cJSON_GetObjectItem(object,"repeat")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"relay"))
 		{
-			device->sched->relay = atoi(cJSON_GetObjectItem(object,"relay")->valuestring);
+			sched.relay = atoi(cJSON_GetObjectItem(object,"relay")->valuestring);
 		}
+		process_data_json_callback(SCHEDULE_EVENT,&sched);
 		cJSON_Delete(object);
 	}
 
@@ -182,8 +181,7 @@ static void parsing_data_receive_json(char* data)
 	{
 		alarm_t alarm = {0};
 		sensor_t data = {0};
-		device->alarm = &alarm;
-		device->alarm->data = &data;
+		alarm.data = &data;
 		SET_EVENT_FLAG(ALARM_EVENT);
 		object = cJSON_GetObjectItem(dev,"alarm");
 		if(cJSON_HasObjectItem(object,"data"))
@@ -191,22 +189,23 @@ static void parsing_data_receive_json(char* data)
 			element = cJSON_GetObjectItem(object,"data");
 			if(cJSON_HasObjectItem(element,"temp"))
 			{
-				device->alarm->data->temp = atoi(cJSON_GetObjectItem(element,"temp")->valuestring);
+				alarm.data->temp = atoi(cJSON_GetObjectItem(element,"temp")->valuestring);
 			}
 			if(cJSON_HasObjectItem(element,"humi"))
 			{
-				device->alarm->data->humi = atoi(cJSON_GetObjectItem(element,"humi")->valuestring);
+				alarm.data->humi = atoi(cJSON_GetObjectItem(element,"humi")->valuestring);
 			}
 			cJSON_Delete(element);
 		}
 		if(cJSON_HasObjectItem(object,"state"))
 		{
-			device->alarm->data->temp = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
+			alarm.state = atoi(cJSON_GetObjectItem(object,"state")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"status"))
 		{
-			device->alarm->data->humi = atoi(cJSON_GetObjectItem(object,"status")->valuestring);
-		}	
+			alarm.status = atoi(cJSON_GetObjectItem(object,"status")->valuestring);
+		}
+		process_data_json_callback(ALARM_EVENT,&alarm);
 		cJSON_Delete(object);		
 	}
 	if(cJSON_HasObjectItem(dev,"reset_factory"))
@@ -219,20 +218,20 @@ static void parsing_data_receive_json(char* data)
 	}
 	if(cJSON_HasObjectItem(dev,"change_wifi"))
 	{
-		device_info_t info = {0};
-		device->info = &info;
+		device_info_t info;
 		SET_EVENT_FLAG(CHANGE_WIFI_EVENT);
 		object = cJSON_GetObjectItem(dev,"change_wifi");
 		if(cJSON_HasObjectItem(object,"ssid"))
 		{
-			memset(device->info->ssid,0,sizeof(device->info->ssid));
-			strcpy(device->info->ssid,cJSON_GetObjectItem(object,"ssid")->valuestring);
+			memset(info.ssid,0,sizeof(info.ssid));
+			strcpy(info.ssid,cJSON_GetObjectItem(object,"ssid")->valuestring);
 		}
 		if(cJSON_HasObjectItem(object,"pass"))
 		{
-			memset(device->info->pass,0,sizeof(device->info->pass));
-			strcpy(device->info->pass,cJSON_GetObjectItem(object,"pass")->valuestring);
+			memset(info.pass,0,sizeof(info.pass));
+			strcpy(info.pass,cJSON_GetObjectItem(object,"pass")->valuestring);
 		}	
+		process_data_json_callback(CHANGE_WIFI_EVENT,&info);
 		cJSON_Delete(object);		
 	}
 	if(cJSON_HasObjectItem(dev,"ota"))
@@ -249,16 +248,14 @@ static void parsing_data_receive_json(char* data)
 	}
 	if(cJSON_HasObjectItem(dev,"relay"))
 	{
-		app_data_t data = {0};
-		device->data = &data;
+		app_data_t data;
 		SET_EVENT_FLAG(CONTROL_RELAY_EVENT);
-		device->data->relay = atoi(cJSON_GetObjectItem(dev,"relay")->valuestring);
+		data.relay = atoi(cJSON_GetObjectItem(dev,"relay")->valuestring);
+		process_data_json_callback(CONTROL_RELAY_EVENT,&data);
 	}
 	// if(cJSON_HasObjectItem(dev,"sensor"))
 	// {
 	// }
-	process_data_json_callback(device);
-	free(device);
 	cJSON_Delete(dev);
 }
 
@@ -401,11 +398,10 @@ static void create_device_info_object(device_info_t* dev_info)
 
 static void create_relay_object(uint8_t data)
 {
-	object_json = cJSON_AddObjectToObject(device_json, "relay");
 	char buffer[4] = {0};
 	sprintf(buffer,"%d",data);
-	element_json = cJSON_CreateString(buffer);
-    cJSON_AddItemToObject(object_json, "value",element_json);
+	object_json = cJSON_CreateString(buffer);
+    cJSON_AddItemToObject(device_json, "relay",object_json);
 }
 
 static void create_sensor_realtime_object(sensor_t* data)
