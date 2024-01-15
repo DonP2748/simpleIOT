@@ -39,7 +39,8 @@
 #define EXAMPLE_BROKER_URL "mqtt://broker.hivemq.com"   // mqtt://broker.hivemq.com  
 #define BKAVIOT_BROKER_URL "mqtt://172.28.165.41"
 #define TOPIC_LENGTH_MAX  64
-char *device_topic = NULL;
+char *device_topic_recv = NULL;
+char *device_topic_tran = NULL;
 //---------------------------------------//
 
 //--------------PRIVATE------------------//
@@ -90,8 +91,8 @@ void mqtt_data_handler_unregister(void)
 #define	RETAIN 	0
 void mqtt_publish_data_on_topic(char *topic, char *data)
 {
-    if(device_topic)
-        esp_mqtt_client_publish(client,(topic == NULL) ? device_topic : topic, data, LEN, QoS, RETAIN);
+    if(device_topic_tran)
+        esp_mqtt_client_publish(client,(topic == NULL) ? device_topic_tran : topic, data, LEN, QoS, RETAIN);
 }
 
 void mqtt_subcribe_topic(char *topic)
@@ -158,13 +159,19 @@ static void mqtt_connected_callback (void)
 {
     uint8_t mac[6];
     esp_read_mac(mac,ESP_MAC_WIFI_STA);
-    device_topic = (char*)malloc(18*sizeof(char));
-    if (!device_topic)
-    {
+    device_topic_recv = (char*)malloc(40*sizeof(char));
+    if (!device_topic_recv){
         ESP_LOGE(TAG,"Set Topic Failed");
         return;
     }
-    sprintf(device_topic,MACSTR,MAC2STR(mac));
-    esp_mqtt_client_subscribe(client,device_topic, 0);
-    ESP_LOGI(TAG, "sent subscribe successful TOPIC : %s MAC : "MACSTR,device_topic,MAC2STR(mac));
+    sprintf(device_topic_recv,"Thermostat_Receive_"MACSTR,MAC2STR(mac));
+    esp_mqtt_client_subscribe(client,device_topic_recv, 0);
+    ESP_LOGI(TAG, "sent subscribe successful TOPIC : %s MAC : "MACSTR,device_topic_recv,MAC2STR(mac));
+    device_topic_tran = (char*)malloc(40*sizeof(char));    
+    if (!device_topic_tran){
+        ESP_LOGE(TAG,"Set Topic Failed");
+        return;
+    }
+    sprintf(device_topic_tran,"Thermostat_Transmit_"MACSTR,MAC2STR(mac));
+    ESP_LOGI(TAG, "sent publish successful TOPIC : %s MAC : "MACSTR,device_topic_tran,MAC2STR(mac));
 }

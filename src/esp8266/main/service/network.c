@@ -55,19 +55,20 @@ void init_network_process(void)
 	
 }
 
-void get_network_info(int* rssi,char* mac,char* ssid, uint32_t* ip)
+void get_network_info(int* rssi,uint8_t* mac,char* ssid, uint32_t* ip)
 {
 	// rssi
 	wifi_ap_record_t ap;
 	esp_wifi_sta_get_ap_info(&ap);
 	*rssi = ap.rssi;
 	// mac
-    esp_base_mac_addr_get((uint8_t*)mac);
+    esp_read_mac(mac,ESP_MAC_WIFI_STA);
     // ssid
     wifi_config_t wifi_config;
     bzero(&wifi_config, sizeof(wifi_config_t));
     esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_config);
-    memcpy(wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+//    memcpy(wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    sprintf(ssid,"%s",wifi_config.sta.ssid);
     // ip
 	tcpip_adapter_ip_info_t ipInfo;
 	tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);

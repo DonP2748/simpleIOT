@@ -18,6 +18,6 @@
 
 //--------------DECLARE------------------//
 void init_network_process(void);
-void get_network_info(int* rssi,char* mac,char* ssid, uint32_t* ip);
+void get_network_info(int* rssi,uint8_t* mac,char* ssid, uint32_t* ip);
 //---------------------------------------//
 #endif//_NETWORK_H_

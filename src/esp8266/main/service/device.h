@@ -23,9 +23,9 @@ typedef struct device_info_t
 	int soft_ver;
 	int rssi;
 	char secure_key[16];
-	char mac[6];
 	char ssid[32];
 	char pass[64];
+	uint8_t mac[6];
 	uint32_t ip;
 } device_info_t;
 

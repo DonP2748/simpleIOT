@@ -369,11 +369,11 @@ static void create_device_info_object(device_info_t* dev_info)
     
     // element_json = cJSON_CreateString(dev_info->secure_key);
     // cJSON_AddItemToObject(object_json, "secure_key",element_json);
-    
-    element_json = cJSON_CreateString(dev_info->mac);
+    sprintf(buffer,MACSTR,MAC2STR(dev_info->mac));
+    element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "mac",element_json);
-   
-    element_json = cJSON_CreateString(dev_info->ssid);
+   	sprintf(buffer,"%s",dev_info->ssid);
+    element_json = cJSON_CreateString(buffer);
     cJSON_AddItemToObject(object_json, "ssid",element_json);
     
     // element_json = cJSON_CreateString(dev_info->pass);
