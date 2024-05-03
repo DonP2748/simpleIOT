@@ -39,4 +39,3 @@ To install Papermark, you need to have esp8266-rtos (esp-idf for esp8266) instal
 
 •  If you have any ideas about embedding, programming and need someone to work with, I'm happy to join.
 
-•  If you know of any remote projects or jobs available, please let me know.
